@@ -1,5 +1,5 @@
 {
-  "name": "app",
+  "name": "GOJO BOT",
   "version": "1.0.0",
   "description": "Hosting",
   "main": "index.js",
@@ -14,7 +14,7 @@
     "@adiwajshing/keyed-db": "^0.2.4",
     "@cacheable/node-cache": "^1.7.5",
     "@hapi/boom": "^10.0.1",
-    "@whiskeysockets/baileys": "^github:jonathanggg/KennyBaileys",
+    "@whiskeysockets/baileys": "v7.0.0-rc.7",
     "async-mutex": "^0.5.0",
     "axios": "^1.13.2",
     "boxen": "^8.0.1",
