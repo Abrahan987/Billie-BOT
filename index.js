@@ -1,110 +1,137 @@
 
-import { Boom } from '@hapi/boom';
-import {
-  default as makeWASocket,
-  DisconnectReason,
-  useMultiFileAuthState,
-  fetchLatestBaileysVersion,
-  makeCacheableSignalKeyStore,
-} from '@whiskeysockets/baileys';
-import pino from 'pino';
-import readline from 'readline';
-import cfonts from 'cfonts';
-import chalk from 'chalk';
-import handler from './handler.js';
+import './config.js'
+import { watchFile, unwatchFile } from 'fs'
+import cfonts from 'cfonts'
+import { createRequire } from 'module'
+import { fileURLToPath, pathToFileURL } from 'url'
+import { platform } from 'process'
+import * as ws from 'ws'
+import fs, { readdirSync, statSync, unlinkSync, existsSync, mkdirSync, readFileSync, rmSync, watch } from 'fs'
+import yargs from 'yargs'
+import { spawn } from 'child_process'
+import lodash from 'lodash'
+import chalk from 'chalk'
+import syntaxerror from 'syntax-error'
+import { tmpdir } from 'os'
+import { format } from 'util'
+import P from 'pino'
+import pino from 'pino'
+import path, { join, dirname } from 'path'
+import { Boom } from '@hapi/boom'
+import { makeWASocket, protoType, serialize } from './lib/simple.js'
+import { Low, JSONFile } from 'lowdb'
+import store from './lib/store.js'
+const { proto } = (await import('@whiskeysockets/baileys')).default
+import pkg from 'google-libphonenumber'
+const { PhoneNumberUtil } = pkg
+const phoneUtil = PhoneNumberUtil.getInstance()
+const { DisconnectReason, useMultiFileAuthState, MessageRetryMap, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidNormalizedUser } = await import('@whiskeysockets/baileys')
+import readline from 'readline'
+import NodeCache from 'node-cache'
 
-const logger = pino({ level: 'silent' });
+const { CONNECTING } = ws
+const { chain } = lodash
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3000
 
-const { say } = cfonts;
+let { say } = cfonts
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse())
 
 say('GOJO BOT', {
   font: 'block',
   align: 'center',
   colors: ['yellowBright']
-});
+})
 
 say(`Made With By ABRAHAN-M Y STAFF GOJO`, {
   font: 'console',
   align: 'center',
   colors: ['cyan']
-});
+})
 
-function connectToWhatsApp() {
-  return new Promise(async (resolve, reject) => {
-    const { state, saveCreds } = await useMultiFileAuthState('.auth_info_baileys');
-    const { version, isLatest } = await fetchLatestBaileysVersion();
-    console.log(`using WA v${version.join('.')}, isLatest: ${isLatest}`);
-
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    const question = (texto) => new Promise((resolver) => rl.question(texto, resolver));
-
-    let opcion;
-    if (!state.creds || !state.creds.registered) {
-      const colores = chalk.bgMagenta.white;
-      const opcionQR = chalk.bold.green;
-      const opcionTexto = chalk.bold.cyan;
-      do {
-        opcion = await question(colores('⌨ Seleccione una opción:\n') + opcionQR('1. Con código QR\n') + opcionTexto('2. Con código de texto de 8 dígitos\n--> '));
-        if (!/^[1-2]$/.test(opcion)) {
-          console.log(chalk.bold.redBright(`✦ No se permiten numeros que no sean 1 o 2, tampoco letras o símbolos especiales.`));
-        }
-      } while (opcion !== '1' && opcion !== '2');
-    }
-
-    const sock = makeWASocket({
-      version,
-      auth: {
-        creds: state.creds,
-        keys: makeCacheableSignalKeyStore(state.keys, logger),
-      },
-      printQRInTerminal: opcion === '1',
-      logger,
-      browser: ['Chrome (Linux)', '', ''],
-    });
-
-    if (opcion === '2' && !sock.authState.creds.registered) {
-      const phoneNumber = await question(chalk.bgBlack(chalk.bold.greenBright(`✦ Por favor, Ingrese el número de WhatsApp.\n${chalk.bold.yellowBright(`✏  Ejemplo: 50584xxxxxx`)}\n${chalk.bold.magentaBright('---> ')}`)));
-      const code = await sock.requestPairingCode(phoneNumber.trim());
-      console.log(chalk.bold.white(chalk.bgMagenta(`✧ CÓDIGO DE VINCULACIÓN ✧`)), chalk.bold.white(chalk.white(code)));
-      rl.close();
-    }
-
-    sock.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect } = update;
-      if (connection === 'close') {
-        const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
-        if (reason === DisconnectReason.loggedOut || reason === DisconnectReason.badSession) {
-          console.log(chalk.bold.redBright(`Connection closed permanently, please delete .auth_info_baileys folder and restart.`));
-          reject(new Error('Permanent connection error'));
-        } else {
-          console.log(chalk.bold.yellowBright(`Connection closed, reconnecting... Reason: ${DisconnectReason[reason] || 'Unknown'}`));
-          resolve();
-        }
-      } else if (connection === 'open') {
-        console.log(chalk.bold.green('\nKennyBot Conectado con éxito.'));
-      }
-    });
-
-    sock.ev.on('creds.update', saveCreds);
-
-    sock.ev.on('messages.upsert', async (m) => {
-      if (!m.messages) return;
-      const msg = m.messages[0];
-      await handler(sock, msg);
-    });
-  });
+if (!existsSync("./Gojo-sessions")) {
+  mkdirSync("./Gojo-sessions");
 }
 
-async function startBot() {
-  while (true) {
-    try {
-      await connectToWhatsApp();
-    } catch (error) {
-      console.error('Bot stopped due to an unrecoverable error:', error);
-      break;
-    }
-    console.log("Reconnecting...");
+let handler = await import('./handler.js')
+let M_IMPORT = import.meta.url
+
+async function startGojo() {
+  const { state, saveCreds } = await useMultiFileAuthState('./Gojo-sessions')
+  const { version, isLatest } = await fetchLatestBaileysVersion()
+
+  const connectionOptions = {
+    logger: pino({ level: 'silent' }),
+    printQRInTerminal: true,
+    browser: ['Gojo-Bot', 'Safari', '1.0.0'],
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
+    },
+    version
   }
+
+  const conn = makeWASocket(connectionOptions)
+  store.bind(conn)
+
+  conn.ev.on('messages.upsert', async chatUpdate => {
+    try {
+      const mek = chatUpdate.messages[0]
+      if (!mek.message) return
+      mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
+      if (mek.key && mek.key.remoteJid === 'status@broadcast') return
+      if (!conn.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
+      if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
+      const m = serialize(conn, mek, store)
+      handler.handler(conn, m, chatUpdate)
+    } catch (err) {
+      console.error(err)
+    }
+  })
+
+  conn.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect } = update
+    if (connection === 'close') {
+      let reason = new Boom(lastDisconnect?.error)?.output.statusCode
+      if (reason === DisconnectReason.badSession) {
+        console.log(`Bad Session File, Please Delete Session and Scan Again`)
+        startGojo()
+      } else if (reason === DisconnectReason.connectionClosed) {
+        console.log("Connection closed, reconnecting....")
+        startGojo()
+      } else if (reason === DisconnectReason.connectionLost) {
+        console.log("Connection Lost from Server, reconnecting...")
+        startGojo()
+      } else if (reason === DisconnectReason.connectionReplaced) {
+        console.log("Connection Replaced, Another New Session Opened, Please Close Current Session First")
+        startGojo()
+      } else if (reason === DisconnectReason.loggedOut) {
+        console.log(`Device Logged Out, Please Scan Again And Run.`)
+        startGojo()
+      } else if (reason === DisconnectReason.restartRequired) {
+        console.log("Restart Required, Restarting...")
+        startGojo()
+      } else if (reason === DisconnectReason.timedOut) {
+        console.log("Connection TimedOut, Reconnecting...")
+        startGojo()
+      } else {
+        conn.end(`Unknown DisconnectReason: ${reason}|${connection}`)
+      }
+    } else if (connection === 'open') {
+      console.log('Connected to WhatsApp')
+    }
+  })
+
+  conn.ev.on('creds.update', saveCreds)
 }
 
-startBot();
+startGojo()
+
+let file = fileURLToPath(M_IMPORT)
+watchFile(file, () => {
+  unwatchFile(file)
+  console.log(chalk.redBright("Update 'index.js'"))
+  import(`${file}?update=${Date.now()}`)
+})

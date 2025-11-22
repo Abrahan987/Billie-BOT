@@ -1,46 +1,41 @@
 {
   "name": "GOJO BOT",
   "version": "1.0.0",
-  "description": "Hosting",
+  "description": "WhatsApp Bot",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
-    "@cacheable/node-cache": "^1.7.5",
-    "@hapi/boom": "^10.0.1",
-    "@whiskeysockets/baileys": "^7.0.0-rc.9",
-    "async-mutex": "^0.5.0",
-    "axios": "^1.13.2",
-    "boxen": "^8.0.1",
-    "cache-manager": "^7.2.5",
-    "cfonts": "^3.3.1",
-    "chalk": "^5.6.2",
-    "cheerio": "^1.1.2",
-    "google-libphonenumber": "^3.2.43",
-    "gradient-string": "^3.0.0",
-    "jimp": "^1.6.0",
-    "libphonenumber-js": "^1.12.29",
-    "lodash": "^4.17.21",
-    "lowdb": "^7.0.1",
-    "music-metadata": "^11.10.2",
-    "pino": "^10.1.0",
-    "protobufjs": "^7.5.4",
-    "uuid": "^13.0.0",
-    "ws": "^8.18.3",
-    "yargs": "^18.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Abrahan987/Billie-BOT.git"
-  },
-  "bugs": {
-    "url": "https://github.com/Abrahan987/Billie-BOT/issues"
-  },
-  "homepage": "https://github.com/Abrahan987/Billie-BOT#readme"
+    "@hapi/boom": "^9.1.4",
+    "@whiskeysockets/baileys": "github:jonathanggg/KennyBaileys",
+    "async-mutex": "^0.4.0",
+    "axios": "^1.4.0",
+    "cfonts": "^3.1.1",
+    "chalk": "^5.2.0",
+    "cheerio": "^1.0.0-rc.12",
+    "file-type": "^18.2.1",
+    "fluent-ffmpeg": "^2.1.2",
+    "google-it": "^1.6.4",
+    "google-libphonenumber": "^3.2.32",
+    "jimp": "0.16.1",
+    "jsdom": "^22.1.0",
+    "link-preview-js": "^3.0.5",
+    "lowdb": "^3.0.0",
+    "moment-timezone": "^0.5.43",
+    "mongoose": "^7.1.0",
+    "node-cache": "^5.1.2",
+    "node-fetch": "^3.3.1",
+    "node-gtts": "2.0.2",
+    "node-webpmux": "^3.1.7",
+    "pino": "^8.11.0",
+    "protobufjs": "^7.2.3",
+    "qrcode-terminal": "^0.12.0",
+    "syntax-error": "^1.4.0",
+    "ws": "^8.13.0",
+    "yargs": "^17.7.1",
+    "awesome-phonenumber": "^6.4.0"
+  }
 }
