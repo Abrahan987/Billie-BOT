@@ -89,4 +89,4 @@ const handler = async function(sock, m) {
   }
 };
 
-export default handler;
+export default { handler };
