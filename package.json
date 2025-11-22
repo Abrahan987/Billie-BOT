@@ -11,9 +11,30 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@adiwajshing/keyed-db": "^0.2.4",
+    "@cacheable/node-cache": "^1.7.5",
     "@hapi/boom": "^10.0.1",
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "async-mutex": "^0.5.0",
+    "axios": "^1.13.2",
+    "cache-manager": "^7.2.5",
     "chalk": "^5.6.2",
-    "pino": "^10.1.0"
-  }
+    "cheerio": "^1.1.2",
+    "gradient-string": "^3.0.0",
+    "libphonenumber-js": "^1.12.29",
+    "lodash": "^4.17.21",
+    "music-metadata": "^11.10.2",
+    "pino": "^10.1.0",
+    "protobufjs": "^7.5.4",
+    "uuid": "^13.0.0",
+    "ws": "^8.18.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abrahan987/Billie-BOT.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Abrahan987/Billie-BOT/issues"
+  },
+  "homepage": "https://github.com/Abrahan987/Billie-BOT#readme"
 }

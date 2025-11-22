@@ -6,12 +6,19 @@ import { fileURLToPath, pathToFileURL } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const dbPath = './database.json';
 let database = {};
+
+if (!fs.existsSync(dbPath)) {
+  fs.writeFileSync(dbPath, JSON.stringify({}, null, 2));
+  console.log('Created database.json as it did not exist.');
+}
+
 try {
-  const data = fs.readFileSync('./database.json', 'utf8');
+  const data = fs.readFileSync(dbPath, 'utf8');
   database = JSON.parse(data);
 } catch (e) {
-  console.error('Failed to load database, starting with a new one.', e);
+  console.error('Failed to load database, starting with an empty one.', e);
   database = {};
 }
 

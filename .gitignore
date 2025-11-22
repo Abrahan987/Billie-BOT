@@ -1,3 +1,5 @@
 node_modules/
 database.json
 auth_info_baileys/
+.auth_info_baileys/
+*.log
