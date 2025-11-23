@@ -1,2 +1,0 @@
-# Billie-BOT
-Hosting 
