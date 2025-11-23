@@ -2,7 +2,7 @@
   "name": "Gojo Satorou Bot",
   "version": "2.2.0",
   "description": "Super WhatsApp Bot Multi Device",
-  "main": "index.mjs",
+  "main": "index.js",
   "type": "module",
   "directories": {
     "lib": "lib",
@@ -10,11 +10,11 @@
     "plugins": "plugins"
   },
   "scripts": {
-    "start": "node index.mjs",
-    "qr": "node index.mjs qr",
-    "code": "node index.mjs code",
-    "test": "node test.mjs",
-    "test2": "nodemon index.mjs",
+    "start": "node --input-type=module index.js",
+    "qr": "node index.js qr",
+    "code": "node index.js code",
+    "test": "node test.js",
+    "test2": "nodemon index.js",
     "eslint": "eslint .",
     "eslintfix": "eslint --fix ."
   },

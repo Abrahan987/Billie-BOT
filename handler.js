@@ -1,4 +1,4 @@
-import './config.mjs'
+import './config.js'
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -30,7 +30,7 @@ const plugins = {};
 const commands = {};
 
 const pluginsDir = path.join(__dirname, 'plugins');
-const pluginFiles = fs.readdirSync(pluginsDir).filter(file => file.endsWith('.mjs'));
+const pluginFiles = fs.readdirSync(pluginsDir).filter(file => file.endsWith('.js'));
 
 for (const file of pluginFiles) {
   try {

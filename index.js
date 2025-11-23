@@ -1,5 +1,5 @@
 
-import './config.mjs'
+import './config.js'
 import { setupMaster, fork } from 'cluster'
 import { watchFile, unwatchFile } from 'fs'
 import cfonts from 'cfonts'
@@ -19,9 +19,9 @@ import P from 'pino'
 import pino from 'pino'
 import path, { join, dirname } from 'path'
 import {Boom} from '@hapi/boom'
-import {makeWASocket, protoType, serialize} from './lib/simple.mjs'
+import {makeWASocket, protoType, serialize} from './lib/simple.js'
 import {Low, JSONFile} from 'lowdb'
-import store from './lib/store.mjs'
+import store from './lib/store.js'
 const {proto} = (await import('@whiskeysockets/baileys')).default
 import pkg from 'google-libphonenumber'
 const { PhoneNumberUtil } = pkg
@@ -233,10 +233,10 @@ console.log(chalk.bold.redBright(`\n⚠︎！ RAZON DE DESCONEXIÓN DESCONOCIDA:
 process.on('uncaughtException', console.error)
 
 let isInit = true;
-let handler = await import('./handler.mjs')
+let handler = await import('./handler.js')
 global.reloadHandler = async function(restatConn) {
 try {
-const Handler = await import(`./handler.mjs?update=${Date.now()}`).catch(console.error);
+const Handler = await import(`./handler.js?update=${Date.now()}`).catch(console.error);
 if (Object.keys(Handler || {}).length) handler = Handler
 } catch (e) {
 console.error(e);
@@ -268,7 +268,7 @@ return true
 };
 
 const pluginFolder = global.__dirname(join(__dirname, './plugins'))
-const pluginFilter = (filename) => /\.mjs$/.test(filename)
+const pluginFilter = (filename) => /\.js$/.test(filename)
 global.plugins = {}
 async function filesInit() {
 for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
