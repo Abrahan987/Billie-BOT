@@ -30,6 +30,6 @@ global.sessions = 'sessions'
 let file = fileURLToPath(import.meta.url)
 watchFile(file, () => {
   unwatchFile(file)
-  console.log(chalk.redBright("Update 'config.js'"))
+  console.log(chalk.redBright("Update 'config.mjs'"))
   import(`${file}?update=${Date.now()}`)
 })
