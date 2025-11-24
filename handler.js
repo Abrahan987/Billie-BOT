@@ -206,7 +206,7 @@ continue
 if (typeof plugin !== "function") {
 continue
 }
-if ((usedPrefix = (match[0] || "")[0])) {
+if ((usedPrefix = (match ? match[0] : "") || "")) {
 const noPrefix = m.text.replace(usedPrefix, "")
 let [command, ...args] = noPrefix.trim().split(" ").filter(v => v)
 args = args || []
