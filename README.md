@@ -1,15 +1,15 @@
-<h1 align="center">✦ Yυƙι Sυσυ ✦</h1>
+<h1 align="center">BILLIE BOT</h1>
 
-<img src= "https://files.catbox.moe/om9jai.jpg">
+<img src= "https://qu.ax/dDQdO.jpg">
 </p>
 
-### *`❕️ Información importante`*
+### *`❕️ importante`*
 Este proyecto **no está afiliado de ninguna manera** con `WhatsApp`, `Inc. WhatsApp` es una marca registrada de `WhatsApp LLC`, y este bot es un **desarrollo independiente** que **no tiene ninguna relación oficial con la compañía**.
 
 <details>
-<summary><b> ➮ Descripción</b></summary>
+<summary><b>Descripción</b></summary>
 
-Yuki Bot es un bot de WhatsApp multifuncional basado en `baileys`. Este bot ofrece una variedad de características para mejorar tu experiencia en WhatsApp.
+un bot de WhatsApp multifuncional basado en `baileys`. Este bot ofrece una variedad de características para mejorar tu experiencia en WhatsApp.
 
 #### Características
 Configuración avanzada de grupos 
