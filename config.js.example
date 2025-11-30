@@ -1,0 +1,5 @@
+// Rename this file to config.js and fill in your actual credentials.
+export const spacny = {
+  key: "YOUR_API_KEY_HERE",
+  cookie: "YOUR_COOKIE_STRING_HERE"
+};
