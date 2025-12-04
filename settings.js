@@ -31,7 +31,7 @@ global.dev = "© ⍴᥆ᥕᥱrᥱძ ᑲᥡ ᴀʙʀᴀʜᴀɴ-ᴍ 𒆜"
 global.author = "© mᥲძᥱ ᥕі𝗍һ ᑲᥡ ᴀʙʀᴀʜᴀɴ-ᴍ 𒆜"
 global.etiqueta = "ᴀʙʀᴀʜᴀɴ-ᴍ"
 global.currency = "¥enes"
-global.banner = "https://h.uguu.se/dhmlphFS.jpg"
+global.banner = "https://files.catbox.moe/nsj61q.jpg"
 global.icono = "https://files.catbox.moe/boq8yt.jpg"
 global.catalogo = fs.readFileSync('./lib/catalogo.jpg')
 
