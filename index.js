@@ -279,30 +279,66 @@ global.plugins[filename] = module.default || module
 conn.logger.error(e)
 delete global.plugins[filename]
 }}}
-filesInit().then((_) => Object.keys(global.plugins)).catch(console.error)
+filesInit().then(() => {
+  global.commandMap = new Map();
+  for (const filename in global.plugins) {
+    const plugin = global.plugins[filename];
+    if (plugin.command) {
+      const commands = Array.isArray(plugin.command) ? plugin.command : [plugin.command];
+      for (const command of commands) {
+        global.commandMap.set(command, { plugin, filename });
+      }
+    }
+  }
+}).catch(console.error);
+
 global.reload = async (_ev, filename) => {
-if (pluginFilter(filename)) {
-const dir = global.__filename(join(pluginFolder, filename), true)
-if (filename in global.plugins) {
-if (existsSync(dir)) conn.logger.info(` updated plugin - '${filename}'`)
-else {
-conn.logger.warn(`deleted plugin - '${filename}'`)
-return delete global.plugins[filename]
-}} else conn.logger.info(`new plugin - '${filename}'`)
-const err = syntaxerror(readFileSync(dir), filename, {
-sourceType: 'module',
-allowAwaitOutsideFunction: true,
-})
-if (err) conn.logger.error(`syntax error while loading '${filename}'\n${format(err)}`)
-else {
-try {
-const module = (await import(`${global.__filename(dir)}?update=${Date.now()}`))
-global.plugins[filename] = module.default || module
-} catch (e) {
-conn.logger.error(`error require plugin '${filename}\n${format(e)}'`)
-} finally {
-global.plugins = Object.fromEntries(Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b)))
-}}}}
+  if (pluginFilter(filename)) {
+    const dir = global.__filename(join(pluginFolder, filename), true);
+    if (filename in global.plugins) {
+      if (existsSync(dir)) conn.logger.info(`updated plugin - '${filename}'`);
+      else {
+        conn.logger.warn(`deleted plugin - '${filename}'`);
+        const oldPlugin = global.plugins[filename];
+        if (oldPlugin && oldPlugin.command) {
+          const commands = Array.isArray(oldPlugin.command) ? oldPlugin.command : [oldPlugin.command];
+          for (const command of commands) {
+            global.commandMap.delete(command);
+          }
+        }
+        return delete global.plugins[filename];
+      }
+    } else conn.logger.info(`new plugin - '${filename}'`);
+    const err = syntaxerror(readFileSync(dir), filename, {
+      sourceType: 'module',
+      allowAwaitOutsideFunction: true,
+    });
+    if (err) conn.logger.error(`syntax error while loading '${filename}'\n${format(err)}`);
+    else {
+      try {
+        const module = (await import(`${global.__filename(dir)}?update=${Date.now()}`));
+        const newPlugin = module.default || module;
+        const oldPlugin = global.plugins[filename];
+        if (oldPlugin && oldPlugin.command) {
+          const commands = Array.isArray(oldPlugin.command) ? oldPlugin.command : [oldPlugin.command];
+          for (const command of commands) {
+            global.commandMap.delete(command);
+          }
+        }
+        if (newPlugin.command) {
+          const commands = Array.isArray(newPlugin.command) ? newPlugin.command : [newPlugin.command];
+          for (const command of commands) {
+            global.commandMap.set(command, { plugin: newPlugin, filename });
+          }
+        }
+        global.plugins[filename] = newPlugin;
+      } catch (e) {
+        conn.logger.error(`error require plugin '${filename}\n${format(e)}'`);
+      } finally {
+        global.plugins = Object.fromEntries(Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b)));
+      }
+    }
+  }}
 Object.freeze(global.reload)
 watch(pluginFolder, global.reload)
 await global.reloadHandler()

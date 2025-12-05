@@ -33,7 +33,14 @@ global.etiqueta = "ᴀʙʀᴀʜᴀɴ-ᴍ"
 global.currency = "¥enes"
 global.banner = "https://files.catbox.moe/nsj61q.jpg"
 global.icono = "https://files.catbox.moe/boq8yt.jpg"
-global.catalogo = fs.readFileSync('./lib/catalogo.jpg')
+(async () => {
+  try {
+    global.catalogo = await fs.promises.readFile('./lib/catalogo.jpg');
+  } catch (err) {
+    console.error('Failed to load catalog image:', err);
+    global.catalogo = null;
+  }
+})();
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
