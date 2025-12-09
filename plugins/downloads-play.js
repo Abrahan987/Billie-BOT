@@ -5,9 +5,6 @@ const API_BASE = 'http://64.20.54.50:30104/api/download/youtube';
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
     try {
-        const isSearchCommand = ['play', 'song', 'música', 'music'].includes(command);
-        const isDownloadCommand = ['yta', 'ytmp3', 'ytv', 'ytmp4'].includes(command);
-
         if (!text?.trim()) {
             return await conn.reply(m.chat,
                 `🌸 *ᴍᴇʟᴏᴅʏ ᴍᴜsɪᴄ* 🌸\n\n` +
@@ -19,11 +16,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
             );
         }
 
-        if (isSearchCommand) {
-            await handleSearch(m, conn, text, usedPrefix);
-        } else if (isDownloadCommand) {
-            await handleDownload(m, conn, text, command);
-        }
+        await handleSearch(m, conn, text, usedPrefix);
 
     } catch (error) {
         console.error('❌ Error en el handler principal:', error);
@@ -109,10 +102,11 @@ async function handleDownload(m, conn, url, command) {
     const downloadUrl = `${API_BASE}/${endpoint}?url=${encodeURIComponent(url)}`;
 
     try {
+        const fileName = `Melody Music - ${isAudio ? 'audio' : 'video'}`;
         if (isAudio) {
             await conn.sendMessage(m.chat, {
                 audio: { url: downloadUrl },
-                fileName: `Melody Music.mp3`,
+                fileName: `${fileName}.mp3`,
                 mimetype: 'audio/mpeg'
             }, { quoted: m });
             await m.react('🎵');
@@ -120,7 +114,7 @@ async function handleDownload(m, conn, url, command) {
             await conn.sendMessage(m.chat, {
                 video: { url: downloadUrl },
                 caption: `🌸 *¡Video descargado con éxito!* 🌸`,
-                fileName: `Melody Music.mp4`,
+                fileName: `${fileName}.mp4`,
                 mimetype: 'video/mp4'
             }, { quoted: m });
             await m.react('🎬');
@@ -139,6 +133,35 @@ async function handleDownload(m, conn, url, command) {
         );
     }
 }
+
+// Este handler se activa ANTES que los comandos normales
+handler.before = async (m, { conn, usedPrefix }) => {
+    // Extraer el ID del botón presionado
+    const selectedButtonId = m.message?.buttonsResponseMessage?.selectedButtonId || m.message?.templateButtonReplyMessage?.selectedId;
+
+    if (selectedButtonId) {
+        // Verificar si es un comando de este plugin
+        const isYtaCommand = selectedButtonId.startsWith(`${usedPrefix}yta`);
+        const isYtvCommand = selectedButtonId.startsWith(`${usedPrefix}ytv`);
+
+        if (isYtaCommand || isYtvCommand) {
+            // Es un comando de descarga de este plugin, lo manejamos aquí
+            const [rawCommand, ...args] = selectedButtonId.split(' ');
+            const command = rawCommand.replace(usedPrefix, '').toLowerCase();
+            const url = args.join(' ');
+
+            if (url) {
+                // Llamar a la función de descarga
+                await handleDownload(m, conn, url, command);
+            }
+
+            // Retornar true para detener el procesamiento posterior
+            return true;
+        }
+    }
+    // Si no es una respuesta de botón para este plugin, no hacer nada
+    return false;
+};
 
 function formatNumber(num) {
     if (!num) return '0';
