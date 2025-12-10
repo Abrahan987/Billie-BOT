@@ -1,6 +1,6 @@
 let apuestas = {}
 
-let handler = async (m, { conn, command, text, usedPrefix }) => {
+let handler = async (m, { conn, command, text, usedPrefix, args }) => {
     let user = global.db.data.users[m.sender]
     const date = new Date()
     const month = date.getMonth() + 1
@@ -26,28 +26,33 @@ let handler = async (m, { conn, command, text, usedPrefix }) => {
         conn.reply(m.chat, `¡Has encontrado ${amount} copitos de nieve! ❄️\nAhora tienes ${user.copitos} copitos en total.`, m)
 
     } else if (command === 'apostar') {
-        let opponent
-        let amount
+        const opponent = m.mentionedJid[0] || m.quoted?.sender;
+        const amount = parseInt(args.find(arg => !isNaN(parseInt(arg))));
 
-        if (m.mentionedJid[0]) {
-            opponent = m.mentionedJid[0]
-            amount = parseInt(text.replace(/<@!*(\d+)>|@(\d+)|[\s,.]/g, ''))
-        } else if (m.quoted) {
-            opponent = m.quoted.sender
-            amount = parseInt(text)
-        } else {
-            return conn.reply(m.chat, `Menciona a un usuario y la cantidad de copitos a apostar. Ejemplo: ${usedPrefix}apostar 100 @usuario`, m)
+        if (!opponent) {
+            return conn.reply(m.chat, `Menciona a un usuario y la cantidad de copitos a apostar. Ejemplo: ${usedPrefix}apostar 100 @usuario`, m);
         }
 
-        if (isNaN(amount) || amount <= 0) return conn.reply(m.chat, 'La cantidad de copitos a apostar debe ser un número mayor a 0.', m)
-        if (!opponent) return conn.reply(m.chat, 'Debes mencionar a un oponente.', m)
-        if (opponent === m.sender) return conn.reply(m.chat, 'No puedes apostar contra ti mismo.', m)
+        if (opponent === m.sender) {
+            return conn.reply(m.chat, 'No puedes apostar contra ti mismo.', m);
+        }
 
-        let opponentUser = global.db.data.users[opponent]
-        if (!opponentUser) return conn.reply(m.chat, 'El oponente no está en la base de datos.', m)
+        if (isNaN(amount) || amount <= 0) {
+            return conn.reply(m.chat, 'La cantidad de copitos a apostar debe ser un número válido y mayor a 0.', m);
+        }
 
-        if (!user.copitos || user.copitos < amount) return conn.reply(m.chat, `No tienes suficientes copitos para apostar esa cantidad. Tienes ${user.copitos || 0} copitos.`, m)
-        if (!opponentUser.copitos || opponentUser.copitos < amount) return conn.reply(m.chat, `Tu oponente no tiene suficientes copitos para aceptar la apuesta.`, m)
+        const opponentUser = global.db.data.users[opponent];
+        if (!opponentUser) {
+            return conn.reply(m.chat, 'El oponente no está en la base de datos.', m);
+        }
+
+        if ((user.copitos || 0) < amount) {
+            return conn.reply(m.chat, `No tienes suficientes copitos para apostar esa cantidad. Tienes ${user.copitos || 0} copitos.`, m);
+        }
+
+        if ((opponentUser.copitos || 0) < amount) {
+            return conn.reply(m.chat, 'Tu oponente no tiene suficientes copitos para aceptar la apuesta.', m);
+        }
 
         const key = `${m.sender}-${opponent}`
         const reverseKey = `${opponent}-${m.sender}`
