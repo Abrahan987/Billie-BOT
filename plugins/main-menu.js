@@ -41,7 +41,21 @@ let txt = `
 ✦ #steal / #rob <@user>
 ✦ #economyboard / #eboard
 ✦ #aventura / #curar / #cazar / #fish / #mazmorra
+`
+const date = new Date()
+const month = date.getMonth() + 1
+if (month === 12) {
+txt += `
+✦━━━━━━༺♡༻━━━━━━✦
+⋆｡ﾟ☁︎｡⋆｡  🎄 JUEGOS NAVIDEÑOS 🎄  ⋆｡ﾟ☁︎｡⋆｡
+✦━━━━━━༺♡༻━━━━━━✦
 
+✦ #buscar / #copitos
+✦ #apostar <cantidad> @usuario
+`
+}
+
+txt += `
 ✦━━━━━━༺♡༻━━━━━━✦
 ⋆｡ﾟ☁︎｡⋆｡  𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗  ⋆｡ﾟ☁︎｡⋆｡
 ✦━━━━━━༺♡༻━━━━━━✦
