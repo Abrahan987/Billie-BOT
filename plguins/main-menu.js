@@ -41,6 +41,8 @@ let txt = `
 ✦ #steal / #rob <@user>
 ✦ #economyboard / #eboard
 ✦ #aventura / #curar / #cazar / #fish / #mazmorra
+✦ #buscarcopitos (Evento de Diciembre)
+✦ #apuestacopitos (Evento de Diciembre)
 
 ✦━━━━━━༺♡༻━━━━━━✦
 ⋆｡ﾟ☁︎｡⋆｡  𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗  ⋆｡ﾟ☁︎｡⋆｡
