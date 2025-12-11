@@ -113,17 +113,14 @@ export async function billieJadiBot(options) {
 
     if (mcode && !sock.authState.creds.registered) {
         pairingCode = true;
-        setTimeout(async () => {
-            try {
-                let code = await sock.requestPairingCode(id);
-                code = code?.match(/.{1,4}/g)?.join("-") || code;
-                sentMsg = await conn.sendMessage(m.chat, { text: `${rtx2}\n\n*CODE:* ${code}` }, { quoted: m });
-            } catch (e) {
-                console.error("Failed to request pairing code:", e);
-                conn.reply(m.chat, "No se pudo solicitar el código de emparejamiento. Inténtalo de nuevo más tarde.", m);
-                global.conns.delete(jid);
-            }
-        }, 3000);
+        try {
+            const code = await sock.requestPairingCode(id);
+            sentMsg = await conn.sendMessage(m.chat, { text: `${rtx2}\n\n*CODE:* ${code}` }, { quoted: m });
+        } catch (e) {
+            console.error("Failed to request pairing code:", e);
+            conn.reply(m.chat, "No se pudo solicitar el código de emparejamiento. Inténtalo de nuevo más tarde.", m);
+            sock.end(new Error('Pairing code request failed', { cause: e }));
+        }
     }
 
     sock.ev.on('creds.update', saveCreds);
