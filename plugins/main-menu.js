@@ -1,288 +1,67 @@
-import fetch from 'node-fetch'
+import fetch from 'node-fetch';
+import moment from 'moment-timezone';
 
-let handler = async (m, { conn, args }) => {
-let mentionedJid = await m.mentionedJid
-let userId = mentionedJid && mentionedJid[0] ? mentionedJid[0] : m.sender
-let totalreg = Object.keys(global.db.data.users).length
-let totalCommands = Object.values(global.plugins).filter((v) => v.help && v.tags).length
+let handler = async (m, { conn, text, usedPrefix }) => {
+if (text) {
+// Mostrar ayuda para un comando específico
+const command = text.toLowerCase();
+const plugin = Object.values(global.plugins).find(p => p.command?.includes(command) || p.help?.includes(command));
+if (plugin) {
+const helpText = Array.isArray(plugin.help) ? plugin.help[0] : plugin.help;
+const usage = helpText ? `${usedPrefix}${helpText}` : `No se encontró un formato de uso para *${command}*.`;
+const description = plugin.description || "No hay una descripción disponible para este comando.";
+return m.reply(`*Comando:* ${command}\n*Uso:* ${usage}\n*Descripción:* ${description}`);
+} else {
+return m.reply(`No se encontró el comando *"${text}"*.`);
+}}
 
-let txt = `
-✦━━━━━━༺♡༻━━━━━━✦
-⋆｡ﾟ☁︎｡⋆｡ 𝗖𝗢𝗠𝗔𝗡𝗗𝗢𝗦  ⋆｡ﾟ☁︎｡⋆｡
-✦━━━━━━༺♡༻━━━━━━✦
+// --- Generación del Menú Principal ---
+const now = new Date();
+const time = moment.tz('America/Bogota').format('HH:mm');
+const date = moment.tz('America/Bogota').format('dddd, DD [de] MMMM [de] YYYY');
+const totalUsers = Object.keys(global.db.data.users).length;
+const uptime = formatUptime(process.uptime());
+const name = m.name;
 
-*✦ Hola @${userId.split('@')[0]}, soy ${botname}*
+const commands = {};
+Object.values(global.plugins).forEach(plugin => {
+if (!plugin.help || !plugin.tags) return;
+const tags = Array.isArray(plugin.tags) ? plugin.tags : [plugin.tags];
+tags.forEach(tag => {
+if (!commands[tag]) commands[tag] = [];
+const help = Array.isArray(plugin.help) ? plugin.help[0] : plugin.help;
+if (help) commands[tag].push({ help: help.split(' ')[0], premium: plugin.premium });
+});});
 
-• Tipo: ${(conn.user.jid == global.conn.user.jid ? 'Principal' : 'Sub-Bot')}
-• Usuarios: ${totalreg.toLocaleString()}
-• Versión: ${vs}
-• Plugins: ${totalCommands}
-• Librería: ${libreria}
-━━━━━━━━━━━━━━━━━━
+let menu = `*¡Hola, ${name}!* ♫︎\n\n` +
+`*Fecha:* ${date}\n*Hora:* ${time}\n*Uptime:* ${uptime}\n*Usuarios:* ${totalUsers}\n\n`;
 
+const categoryOrder = ['main', 'profile', 'group', 'fun', 'anime', 'rpg', 'gacha', 'downloads', 'tools', 'nsfw', 'owner'];
+for (const tag of categoryOrder) {
+if (commands[tag]) {
+menu += `*╭─「 ${tag.charAt(0).toUpperCase() + tag.slice(1)} 」*\n`;
+menu += commands[tag].map(c => `*│* ${usedPrefix}${c.help} ${c.premium ? '💎' : ''}`).join('\n');
+menu += `\n*╰────────────*\n\n`;
+}}
 
-✦━━━━━━༺♡༻━━━━━━✦
-⋆｡ﾟ☁︎｡⋆｡  𝗘𝗖𝗢𝗡𝗢𝗠𝗬  ⋆｡ﾟ☁︎｡⋆｡
-✦━━━━━━༺♡༻━━━━━━✦
+const menuFooter = `> ♫︎ Escribe \`${usedPrefix}help [comando]\` para más detalles.`;
 
-✦ #w / #work / #trabajar
-✦ #slut / #prostituirse
-✦ #coinflip / #flip / #cf <cant> <cara/cruz>
-✦ #crime
-✦ #roulette / #rt <color> <cant>
-✦ #casino / #apostar / #slot <cant>
-✦ #balance / #bal / #bank
-✦ #deposit / #dep <cant>
-✦ #withdraw / #with <cant>
-✦ #economyinfo / #einfo
-✦ #givecoins / #pay <user> <cant>
-✦ #miming / #minar
-✦ #daily / #cofre / #weekly / #monthly
-✦ #steal / #rob <@user>
-✦ #economyboard / #eboard
-✦ #aventura / #curar / #cazar / #fish / #mazmorra
+await conn.reply(m.chat, menu + menuFooter, m);
+};
 
-✦━━━━━━༺♡༻━━━━━━✦
-⋆｡ﾟ☁︎｡⋆｡  𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗  ⋆｡ﾟ☁︎｡⋆｡
-✦━━━━━━༺♡༻━━━━━━✦
-
-✦ #tiktok <link>
-✦ #wagroups <text>
-✦ #mediafire <link>
-✦ #mega <link>
-✦ #play / #ytmp3 / #ytmp4
-✦ #facebook <link>
-✦ #twitter / #x
-✦ #ig / #instagram
-✦ #pinterest
-✦ #image
-✦ #apk / #modapk
-✦ #ytsearch
-✦ #gitclone <link>
-
-✦━━━━━━༺♡༻━━━━━━✦
-⋆｡ﾟ☁︎｡⋆｡  𝗚𝗔𝗖𝗛𝗔  ⋆｡ﾟ☁︎｡⋆｡
-✦━━━━━━༺♡༻━━━━━━✦
-
-✦ #buycharacter <name>
-✦ #charimage / #waifuimage
-✦ #charinfo
-✦ #claim
-✦ #deletewaifu <name>
-✦ #favoritetop
-✦ #gachainfo
-✦ #giveallharem <@user>
-✦ #givechar <@user> <name>
-✦ #robwaifu <@user>
-✦ #harem / #waifus
-✦ #haremshop
-✦ #removesale <price> <name>
-✦ #rollwaifu
-✦ #sell <price> <name>
-✦ #serieinfo
-✦ #serielist
-✦ #setclaimmsg
-✦ #trade <char1> / <char2>
-✦ #vote <name>
-✦ #waifusboard
-
-✦━━━━━━༺♡༻━━━━━━✦
-⋆｡ﾟ☁︎｡⋆｡  𝐄𝐌𝐎𝐗  ⋆｡ﾟ☁︎｡⋆｡
-✦━━━━━━༺♡༻━━━━━━✦
-
-✦ #Follar @user
-
-✦━━━━━━༺♡༻━━━━━━✦
-⋆｡ﾟ☁︎｡⋆｡  𝗦𝗢𝗖𝗞𝗘𝗧𝗦  ⋆｡ﾟ☁︎｡⋆｡
-✦━━━━━━༺♡༻━━━━━━✦
-
-✦ #qr / #code
-✦ #bots
-✦ #status
-✦ #ping
-✦ #join <invite>
-✦ #leave
-✦ #logout
-✦ #setpfp
-✦ #setstatus
-✦ #setusername
-
-✦━━━━━━༺♡༻━━━━━━✦
-⋆｡ﾟ☁︎｡⋆｡  𝗨𝗧𝗜𝗟𝗜𝗧𝗜𝗘𝗦  ⋆｡ﾟ☁︎｡⋆｡
-✦━━━━━━༺♡༻━━━━━━✦
-
-✦ #help / #menu
-✦ #sc
-✦ #sug
-✦ #reporte
-✦ #calcular
-✦ #delmeta
-✦ #getpic
-✦ #say
-✦ #setmeta
-✦ #sticker
-✦ #toimg
-✦ #brat / #qc / #emojimix
-✦ #enhance
-✦ #letra
-✦ #read
-✦ #ssweb
-✦ #translate
-✦ #ia / #gemini
-✦ #iavoz
-✦ #tourl
-✦ #wiki
-✦ #dalle
-✦ #npmdl
-✦ #google
-
-✦━━━━━━༺♡༻━━━━━━✦
-⋆｡ﾟ☁︎｡⋆｡  𝗣𝗥𝗢𝗙𝗜𝗟𝗘𝗦  ⋆｡ﾟ☁︎｡⋆｡
-✦━━━━━━༺♡༻━━━━━━✦
-
-✦ #leaderboard
-✦ #level
-✦ #marry
-✦ #profile
-✦ #setbirth
-✦ #setdescription
-✦ #setgenre
-✦ #delgenre
-✦ #delbirth
-✦ #divorce
-✦ #setfavourite
-✦ #deldescription
-✦ #prem / #vip
-
-✦━━━━━━༺♡༻━━━━━━✦
-⋆｡ﾟ☁︎｡⋆｡  𝗚𝗥𝗢𝗨𝗣𝗦  ⋆｡ﾟ☁︎｡⋆｡
-✦━━━━━━༺♡༻━━━━━━✦
-
-✦ #tagall <text>
-✦ #detect on/off
-✦ #antilink on/off
-✦ #bot on/off
-✦ #close
-✦ #demote
-✦ #economy on/off
-✦ #gacha on/off
-✦ #welcome on/off
-✦ #setbye
-✦ #setprimary
-✦ #setwelcome
-✦ #kick
-✦ #nsfw on/off
-✦ #onlyadmin on/off
-✦ #open
-✦ #promote
-✦ #add
-✦ #admins
-✦ #revoke
-✦ #warn / #addwarn
-✦ #unwarn
-✦ #advlist
-✦ #inactivos
-✦ #kicknum
-✦ #gpbanner
-✦ #gpname
-✦ #gpdesc
-✦ #delete
-✦ #listonline
-✦ #infogrupo
-✦ #link
-
-✦━━━━━━༺♡༻━━━━━━✦
-⋆｡ﾟ☁︎｡⋆｡  𝗔𝗡𝗜𝗠𝗘  ⋆｡ﾟ☁︎｡⋆｡
-✦━━━━━━༺♡༻━━━━━━✦
-
-✦ #angry
-✦ #bath
-✦ #bite
-✦ #bleh
-✦ #blush
-✦ #bored
-✦ #clap
-✦ #coffee
-✦ #cry
-✦ #cuddle
-✦ #dance
-✦ #dramatic
-✦ #drunk
-✦ #eat
-✦ #facepalm
-✦ #happy
-✦ #hug
-✦ #kill
-✦ #kiss
-✦ #kisscheek
-✦ #laugh
-✦ #lick
-✦ #love
-✦ #pat
-✦ #poke
-✦ #pout
-✦ #punch
-✦ #run
-✦ #sad
-✦ #scared
-✦ #seduce
-✦ #shy
-✦ #slap
-✦ #sleep
-✦ #smoke
-✦ #spit
-✦ #step
-✦ #think
-✦ #walk
-✦ #wink
-✦ #cringe
-✦ #smug
-✦ #smile
-✦ #highfive
-✦ #bully
-✦ #handhold
-✦ #wave
-✦ #waifu
-✦ #ppcouple
-
-✦━━━━━━༺♡༻━━━━━━✦
-⋆｡ﾟ☁︎｡⋆｡  𝗡𝗦𝗙𝗪  ⋆｡ﾟ☁︎｡⋆｡
-✦━━━━━━༺♡༻━━━━━━✦
-
-✦ #danbooru <tags>
-✦ #gelbooru <tags>
-✦ #rule34 <tags>
-✦ #xvideos <link>
-✦ #xnxx <link>
-
-> BY ABRAHAN-M
-`.trim()
-
-await conn.sendMessage(m.chat, {
-text: txt,
-contextInfo: {
-mentionedJid: [userId],
-isForwarded: true,
-forwardedNewsletterMessageInfo: {
-newsletterJid: channelRD.id,
-serverMessageId: '',
-newsletterName: channelRD.name
-},
-externalAdReply: {
-title: botname,
-body: textbot,
-mediaType: 1,
-mediaUrl: redes,
-sourceUrl: redes,
-thumbnail: await (await fetch(banner)).buffer(),
-showAdAttribution: false,
-containsAutoReply: true,
-renderLargerThumbnail: true
-}}}, { quoted: m })
+function formatUptime(seconds) {
+const d = Math.floor(seconds / (3600 * 24));
+const h = Math.floor(seconds % (3600 * 24) / 3600);
+const m = Math.floor(seconds % 3600 / 60);
+let parts = [];
+if (d > 0) parts.push(`${d}d`);
+if (h > 0) parts.push(`${h}h`);
+if (m > 0) parts.push(`${m}m`);
+return parts.join(' ') || '0s';
 }
 
-handler.help = ['menu']
-handler.tags = ['main']
-handler.command = ['menu', 'menú', 'help']
+handler.help = ['menu [comando]'];
+handler.tags = ['main'];
+handler.command = ['menu', 'help', 'ayuda'];
 
-export default handler
+export default handler;

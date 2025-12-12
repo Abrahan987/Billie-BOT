@@ -1,13 +1,27 @@
-const handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) throw `❀ No se encontró ningún prefijo. Por favor, escribe un prefijo.\n> *Ejemplo: ${usedPrefix + command} !*`;
+const defaultPrefix = '.'; // Define tu prefijo por defecto aquí
 
-  global.prefix = new RegExp('^[' + (text || global.opts['prefix'] || '‎xzXZ/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.\\-').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') + ']');
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+if (command === 'resetprefix') {
+// Restablecer al prefijo por defecto
+global.prefix = new RegExp('^[' + defaultPrefix.replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') + ']');
+return conn.reply(m.chat, `*${global.decor} ¡Prefijo restablecido!*\n\nEl prefijo ha sido restaurado al valor por defecto: \`${defaultPrefix}\``, m);
+}
 
-return conn.reply(m.chat, `ꕥ Prefijo actualizado con éxito. Prefijo ➩ ${text}`, m)
+if (!text) {
+return conn.reply(m.chat, `${global.decor} ¿Qué prefijo quieres usar?\n\n*Formato:* ${usedPrefix + command} [nuevo prefijo]\n*Para restablecer:* ${usedPrefix}resetprefix`);
+}
+if (text.length > 1) {
+return conn.reply(m.chat, "☂︎ El prefijo solo puede ser un único carácter.", m);
+}
+
+// Actualizar el prefijo global
+global.prefix = new RegExp('^[' + text.replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') + ']');
+await conn.reply(m.chat, `*${global.decor} ¡Prefijo actualizado!*\n\nEl nuevo prefijo del bot es: \`${text}\``, m);
 };
 
-handler.help = ['prefix']
-handler.command = ['prefix']
-handler.tags = ['owner']
+handler.help = ['setprefix <prefijo>', 'resetprefix'];
+handler.tags = ['owner'];
+handler.command = ['setprefix', 'prefix', 'resetprefix'];
+handler.owner = true;
 
 export default handler;

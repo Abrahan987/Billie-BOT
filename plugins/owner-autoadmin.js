@@ -1,20 +1,26 @@
-const handler = async (m, { conn, isAdmin, groupMetadata, usedPrefix, isBotAdmin, isROwner }) => {
-if (!isROwner) return
-if (!isBotAdmin) return
-if (isAdmin) return m.reply(`❀ Ya tienes privilegios de administrador.`)
+let handler = async (m, { conn, isAdmin }) => {
+if (isAdmin) {
+return m.reply("✨ Ya eres un administrador de este grupo.");
+}
+
 try {
-await m.react('🕒')
-await conn.groupParticipantsUpdate(m.chat, [m.sender], 'promote')
-await m.react('✔️')
-m.reply(`❀ Fuiste agregado como admin del grupo con exito.`)
+await m.react('👑');
+// Promover al remitente (el propietario del bot)
+await conn.groupParticipantsUpdate(m.chat, [m.sender], 'promote');
+await conn.reply(m.chat, `*${global.decor} ¡Misión cumplida!* Ahora tienes privilegios de administrador.`, m);
+
 } catch (error) {
-await m.react('✖️')
-m.reply(`⚠︎ Se ha producido un problema\n> Usa *${usedPrefix}report* para informarlo\n\n${error.message}`)
-}}
+await m.react('✖️');
+console.error("Error en autoadmin:", error);
+await conn.reply(m.chat, "☂︎ ¡Oh, no! No pude concederte privilegios de administrador. Asegúrate de que soy administradora del grupo.", m);
+}};
 
-handler.tags = ['owner']
-handler.help = ['autoadmin']
-handler.command = ['autoadmin']
-handler.group = true
+handler.help = ['selfpromote'];
+handler.tags = ['owner'];
+// Renombrado para mayor claridad
+handler.command = ['selfpromote', 'autoadmin'];
+handler.group = true;
+handler.owner = true; // Solo el propietario puede usar este comando
+handler.botAdmin = true; // El bot debe ser admin para que funcione
 
-export default handler
+export default handler;

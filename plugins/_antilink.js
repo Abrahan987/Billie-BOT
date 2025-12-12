@@ -1,21 +1,54 @@
-const linkRegex = /(chat\.whatsapp\.com\/[0-9A-Za-z]{20,24})|(z?https:\/\/whatsapp\.com\/channel\/[0-9A-Za-z]{20,24})/i
-const allowedLinks = ['https://whatsapp.com/channel/0029Vb64nWqLo4hb8cuxe23n']
+// Expresión regular para detectar enlaces de grupos y canales de WhatsApp
+const linkRegex = /chat\.whatsapp\.com\/([0-9A-Za-z]{20,24})|whatsapp\.com\/channel\/([0-9A-Za-z]{20,24})/i;
 
-export async function before(m, { conn, isAdmin, isBotAdmin, isROwner, participants }) {
-if (!m.isGroup) return
-if (!m || !m.text) return
-const chat = global?.db?.data?.chats[m.chat]
-const isGroupLink = linkRegex.test(m.text)
-const isChannelLink = /whatsapp\.com\/channel\//i.test(m.text)
-const hasAllowedLink = allowedLinks.some(link => m.text.includes(link))
-if (hasAllowedLink) return
-if ((isGroupLink || isChannelLink) && !isAdmin) {
-if (isBotAdmin) {
-const linkThisGroup = `https://chat.whatsapp.com/${await conn.groupInviteCode(m.chat)}`
-if (isGroupLink && m.text.includes(linkThisGroup)) return !0
+// --- Manejador 'before' para la detección de enlaces ---
+const before = async (m, { conn, isAdmin, isBotAdmin }) => {
+if (!m.isGroup) return;
+const chat = global.db.data.chats[m.chat] || {};
+if (!chat.antiLink || !m.text || isAdmin) return;
+
+const isGroupLink = linkRegex.test(m.text);
+if (isGroupLink) {
+if (!isBotAdmin) {
+return m.reply("🛡️ *Anti-Link:* Necesito ser administrador para poder eliminar enlaces.");
 }
-if (chat.antilink && isGroupLink && !isAdmin && !isROwner && isBotAdmin && m.key.participant !== conn.user.jid) {
-await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: m.key.id, participant: m.key.participant }})
-await conn.reply(m.chat, `> ꕥ Se ha eliminado a *${global.db.data.users[m.key.participant].name || 'Usuario'}* del grupo por \`Anti-Link\`, no permitimos enlaces de *${isChannelLink ? 'canales' : 'otros grupos'}*.`, null)
-await conn.groupParticipantsUpdate(m.chat, [m.key.participant], 'remove')
-}}}
+
+const linkThisGroup = `https://chat.whatsapp.com/${await conn.groupInviteCode(m.chat)}`;
+if (m.text.includes(linkThisGroup)) return; // Ignorar el enlace del grupo actual
+
+try {
+await conn.sendMessage(m.chat, { delete: m.key });
+await conn.reply(m.chat, `*🛡️ ¡Enlace Detectado! 🛡️*\n\nSe ha eliminado a @${m.sender.split('@')[0]} por enviar un enlace no permitido.`, null, { mentions: [m.sender] });
+await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove');
+} catch (e) {
+console.error("Error en el anti-link:", e);
+}}};
+
+// --- Comando para configurar el Anti-Link ---
+const handler = async (m, { conn, text, usedPrefix, command }) => {
+const chat = global.db.data.chats[m.chat] || {};
+const action = text.trim().toLowerCase();
+
+if (action === 'on') {
+if (chat.antiLink) return m.reply("✨ El sistema Anti-Link ya está activado.");
+chat.antiLink = true;
+await m.reply(`*${global.decor} ¡Anti-Link Activado!*\n\nA partir de ahora, eliminaré a los miembros que envíen enlaces de otros grupos o canales.`);
+} else if (action === 'off') {
+if (!chat.antiLink) return m.reply("✨ El sistema Anti-Link ya está desactivado.");
+chat.antiLink = false;
+await m.reply(`*${global.decor} ¡Anti-Link Desactivado!*\n\nLos miembros ahora pueden enviar enlaces.`);
+} else {
+const status = chat.antiLink ? '🟢 ACTIVADO' : '🔴 DESACTIVADO';
+m.reply(`*🝮︎︎︎︎︎︎︎ CONFIGURACIÓN DE ANTI-LINK 🝮︎︎︎︎︎︎︎*\n\n*Estado actual:* ${status}\n\n` +
+`*Uso:*\n\`${usedPrefix + command} on\` - Activa el sistema.\n\`${usedPrefix + command} off\` - Desactiva el sistema.`);
+}
+};
+
+handler.before = before;
+handler.help = ['antilink <on|off>'];
+handler.tags = ['group'];
+handler.command = ['antilink'];
+handler.admin = true;
+handler.group = true;
+
+export default handler;

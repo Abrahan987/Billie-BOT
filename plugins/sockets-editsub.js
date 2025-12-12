@@ -1,43 +1,70 @@
-import fetch from 'node-fetch'
-import Jimp from 'jimp'
+import Jimp from 'jimp';
 
-const handler = async (m, { conn, command, usedPrefix, text }) => {
-const isSubBots = [conn.user.jid, ...global.owner.map(([number]) => `${number}@s.whatsapp.net`)].includes(m.sender)
-if (!isSubBots) return m.reply(`❀ El comando *${command}* solo puede ser ejecutado por el Socket.`)
-try {
-const value = text ? text.trim() : ''
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+// Solo el propietario o los sub-bots pueden usar estos comandos
+const isAllowed = m.isOwner || global.conns.some(c => c.user.jid === m.sender);
+if (!isAllowed) {
+return m.reply("☂︎ Este comando solo puede ser utilizado por el propietario del bot o por un sub-bot.");
+}
+
 switch (command) {
-case 'setpfp': case 'setimage': {
-const q = m.quoted || m
-const mime = (q.msg || q).mimetype || ''
-if (!/image\/(png|jpe?g)/.test(mime)) return conn.reply(m.chat, `❀ Por favor, responde o envía una imagen válida para cambiar la foto de perfil.`, m)
-const media = await q.download()
-if (!media) return conn.reply(m.chat, `ꕥ No se pudo obtener la imagen.`, m)
-const image = await Jimp.read(media)
-const buffer = await image.getBufferAsync(Jimp.MIME_JPEG)
-await conn.updateProfilePicture(conn.user.jid, buffer)
-conn.reply(m.chat, `❀ Se cambió la *foto de perfil* del Socket correctamente.`, m)
-break
+case 'setbotpp':
+await setProfilePicture(m, conn, usedPrefix, command);
+break;
+case 'setbotbio':
+await setProfileBio(m, conn, text, usedPrefix, command);
+break;
+case 'setbotname':
+await setProfileName(m, conn, text, usedPrefix, command);
+break;
+}};
+
+// --- Funciones Específicas ---
+
+async function setProfilePicture(m, conn, usedPrefix, command) {
+const q = m.quoted || m;
+const mime = (q.msg || q).mimetype || '';
+if (!/image\/(png|jpe?g)/.test(mime)) {
+return m.reply(`${global.decor} ¿Qué imagen quieres usar como foto de perfil?\n\n*Formato:* Responde a una imagen con \`${usedPrefix + command}\``);
 }
-case 'setstatus': case 'setbio': {
-if (!text) return conn.reply(m.chat, `❀ Por favor, ingresa la nueva biografía que deseas ponerme.`, m)
-await conn.updateProfileStatus(text)
-conn.reply(m.chat, `❀ Se cambió la biografía del Socket a *"${text}"* correctamente.`, m)
-break
-}
-case 'setusername': case 'setuser': {
-if (!value) return conn.reply(m.chat, '❀ Ingresa el nuevo nombre de usuario que deseas establecer.', m)
-if (value.length < 3 || value.length > 25)
-return conn.reply(m.chat, 'ꕥ El nombre debe tener entre 3 y 25 caracteres.')
-await conn.updateProfileName(value)
-m.reply(`❀ Se cambió el nombre de usuario a *${value}* correctamente.`)
-break
-}}} catch (error) {
-m.reply(`⚠︎ Se ha producido un problema.\n> Usa *${usedPrefix}report* para informarlo.\n\n${error.message}`)
+try {
+await m.react('🖼️');
+const img = await q.download();
+const image = await Jimp.read(img);
+const buffer = await image.getBufferAsync(Jimp.MIME_JPEG);
+await conn.updateProfilePicture(conn.user.jid, buffer);
+await m.reply(`*${global.decor} ¡Foto de perfil actualizada con éxito!*`);
+} catch (error) {
+console.error("Error al cambiar la foto de perfil:", error);
+await m.reply("☂︎ ¡Oh, no! No pude cambiar la foto de perfil.");
 }}
 
-handler.help = ['setpfp', 'setimage', 'setstatus', 'setbio', 'setusername', 'setuser']
-handler.tags = ['socket']
-handler.command = ['setpfp', 'setimage', 'setstatus', 'setbio', 'setusername', 'setuser']
+async function setProfileBio(m, conn, text, usedPrefix, command) {
+if (!text) {
+return m.reply(`${global.decor} ¿Qué biografía quieres que ponga?\n\n*Formato:* ${usedPrefix + command} [nueva biografía]`);
+}
+try {
+await conn.updateProfileStatus(text);
+await m.reply(`*${global.decor} ¡Biografía actualizada con éxito!*\n\n*Nueva biografía:* ${text}`);
+} catch (error) {
+console.error("Error al cambiar la biografía:", error);
+await m.reply("☂︎ ¡Oh, no! No pude cambiar la biografía.");
+}}
 
-export default handler
+async function setProfileName(m, conn, text, usedPrefix, command) {
+if (!text || text.length < 3 || text.length > 25) {
+return m.reply(`${global.decor} ¿Qué nombre quieres que use?\n\n*Formato:* ${usedPrefix + command} [nuevo nombre]\n_(Entre 3 y 25 caracteres)_`);
+}
+try {
+await conn.updateProfileName(text);
+await m.reply(`*${global.decor} ¡Nombre actualizado con éxito!*\n\n*Nuevo nombre:* ${text}`);
+} catch (error) {
+console.error("Error al cambiar el nombre:", error);
+await m.reply("☂︎ ¡Oh, no! No pude cambiar el nombre.");
+}}
+
+handler.help = ['setbotpp', 'setbotbio <texto>', 'setbotname <texto>'];
+handler.tags = ['sockets'];
+handler.command = ['setbotpp', 'setbotbio', 'setbotname'];
+
+export default handler;

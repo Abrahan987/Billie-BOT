@@ -1,132 +1,109 @@
-import fetch from 'node-fetch'
-import axios from 'axios'
-import cheerio from 'cheerio'
+import fetch from 'node-fetch';
+import cheerio from 'cheerio';
 
-const handler = async (m, { text, conn, args, usedPrefix }) => {
-if (!db.data.chats[m.chat].nsfw && m.isGroup) {
-return m.reply(`ꕥ El contenido *NSFW* está desactivado en este grupo.\n\nUn *administrador* puede activarlo con el comando:\n» *${usedPrefix}nsfw on*`)
+const XV_BASE_URL = 'https://www.xvideos.com';
+let xvSearchCache = {};
+
+// --- Funciones del Scraper ---
+async function searchXvideos(query) {
+const url = `${XV_BASE_URL}/?k=${encodeURIComponent(query)}`;
+const res = await fetch(url);
+const html = await res.text();
+const $ = cheerio.load(html);
+const results = [];
+$('div.mozaique div.thumb-under').each((i, el) => {
+const title = $(el).find('p.title a').attr('title');
+const link = $(el).find('a').attr('href');
+if (title && link) {
+results.push({ title, link: XV_BASE_URL + link });
+}});
+return results;
 }
-if (!text) {
-return m.reply('❀ Por favor, ingresa el título o URL del video de *(xvideos)*.')
+
+async function downloadXvideos(url) {
+const res = await fetch(url);
+const html = await res.text();
+const $ = cheerio.load(html);
+const title = $('h2.page-title').text().trim();
+const script = $('#video-player-bg script').html();
+const videoUrl = script.match(/html5player\.setVideoUrlHigh\('(.+?)'\);/)?.[1];
+return { title, url: videoUrl };
 }
-conn.xvideos = conn.xvideos || {}
-const isUrl = text.includes('xvideos.com')
-if (isUrl) {
+
+
+// --- Manejador de Comandos ---
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+if (!global.db.data.chats[m.chat].nsfw && m.isGroup) {
+return m.reply(`☂︎ El contenido NSFW está desactivado en este grupo.\n\nUn administrador puede activarlo con: *${usedPrefix}nsfw on*`);
+}
+
+switch (command) {
+case 'xvideossearch':
+await handleSearch(m, conn, text, usedPrefix);
+break;
+case 'xvideosdl':
+await handleDownload(m, conn, text, usedPrefix);
+break;
+}};
+
+// --- Lógica de Búsqueda ---
+async function handleSearch(m, conn, text, usedPrefix) {
+if (!text) return m.reply(`*${global.decor} ¿Qué video quieres que busque?\n\n*Formato:* \`${usedPrefix}xvideossearch [búsqueda]\``);
 try {
-await m.react('🕒')
-const res = await xvideosdl(args[0])
-const { duration, quality, views, likes, deslikes } = res.result
-const txt = `*乂 ¡XVIDEOS - DOWNLOAD! 乂*
+await m.react('🔥');
+await m.reply(`*⚠️ ADVERTENCIA NSFW ⚠️*\n\nBuscando videos... Por favor, sé discreto.`);
+const results = await searchXvideos(text);
+if (results.length === 0) return m.reply("☂︎ No encontré ningún video para tu búsqueda.");
 
-≡ Título : ${res.result.title}
-≡ Duración : ${duration || 'Desconocida'}
-≡ Likes : ${likes || 'Desconocida'}
-≡ Des-Likes : ${deslikes}
-≡ Vistas : ${views || 'Desconocidas'}`
-const dll = res.result.url
-await conn.sendFile(m.chat, dll, res.result.title + '.mp4', txt, m)
-await m.react('✔️')
+xvSearchCache[m.sender] = results;
+const searchList = results.slice(0, 10).map((v, i) => `*${i + 1}.* ${v.title}`).join('\n');
+const resultMessage = `*🝮︎︎︎︎︎︎︎ RESULTADOS DE BÚSQUEDA 🝮︎︎︎︎︎︎︎*\n\n${searchList}\n\n` +
+`> ♫︎ Responde con el número del video que quieres descargar (ej. \`1\`).`;
+await m.reply(resultMessage);
 } catch (e) {
-await m.react('✖️')
-await conn.reply(m.chat, `⚠︎ Se ha producido un problema.\n> Usa *${usedPrefix}report* para informarlo.\n\n` + e, m)
-}
-return
-}
-const res = await search(text)
-await m.react('🕒')
-if (!res.length) {
-return m.reply('ꕥ No se encontraron resultados.')
-}
-await m.react('✔️')
-const list = res.slice(0, 10).map((v, i) => `*${i + 1}*\n≡ Título : *${v.title}*\n≡ Link : ${v.url}`).join('\n\n')
-const caption = `*乂 ¡XVIDEOS - SEARCH! 乂*
-
-${list}
-
-> » Responde con el número + n para descargar uno de los siguientes vídeos o bien, usa directamente la URL.`
-const { key } = await conn.sendMessage(m.chat, { text: caption }, { quoted: m })
-conn.xvideos[m.sender] = {
-result: res,
-key,
-downloads: 0,
-timeout: setTimeout(() => delete conn.xvideos[m.sender], 120_000),
+await m.react('✖️');
+console.error(e);
+m.reply("☂︎ Ocurrió un error al buscar los videos.");
 }}
-handler.before = async (m, { conn }) => {
-conn.xvideos = conn.xvideos || {}
-const session = conn.xvideos[m.sender]
-if (!session || !m.quoted || m.quoted.id !== session.key.id) return
-const n = parseInt(m.text.trim())
-if (isNaN(n) || n < 1 || n > session.result.length) {
-await m.reply('ꕥ Por favor, ingresa un número válido.')
-return
+
+// --- Lógica de Descarga ---
+async function handleDownload(m, conn, text, usedPrefix) {
+if (!text || !text.includes('xvideos.com')) {
+return m.reply(`*${global.decor} Por favor, proporciona un enlace de XVideos válido.*\n\n*Formato:* \`${usedPrefix}xvideosdl [URL]\``);
 }
 try {
-await m.react('🕒')
-const link = session.result[n - 1].url
-const res = await xvideosdl(link)
-const { duration, quality, views, likes, deslikes } = res.result
-const txt = `*乂 ¡XVIDEOS - DOWNLOAD! 乂*
+await m.react('🔥');
+await m.reply(`*⚠️ ADVERTENCIA NSFW ⚠️*\n\nDescargando video... Esto puede tardar un momento.`);
+const { title, url } = await downloadXvideos(text);
+if (!url) return m.reply("☂︎ No se pudo obtener el enlace de descarga para este video.");
 
-≡ Título : ${res.result.title}
-≡ Duración : ${duration || 'Desconocida'}
-≡ Likes : ${likes || 'Desconocida'}
-≡ Des-Likes : ${deslikes}
-≡Vistas : ${views || 'Desconocidas'}`
-const dll = res.result.url
-await conn.sendFile(m.chat, dll, res.result.title + '.mp4', txt, m)
-await m.react('✔️')
+const caption = `*🎬 Título:* ${title}`;
+await conn.sendFile(m.chat, url, 'xvideos_video.mp4', caption, m);
 } catch (e) {
-await m.react('✖️')
-await conn.reply(m.chat, `⚠︎ Se ha producido un problema.\n> Usa *${usedPrefix}report* para informarlo.\n\n` + e, m)
-} finally {
-session.downloads++
-if (session.downloads >= 5) {
-clearTimeout(session.timeout)
-delete conn.xvideos[m.sender]}}}
+await m.react('✖️');
+console.error(e);
+m.reply("☂︎ Ocurrió un error al descargar el video.");
+}}
 
-handler.help = ['xvideos']
-handler.tags = ['download']
-handler.command = ['xvideos', 'xvsearch', 'xvideosdl', 'xvid']
-handler.group = true
+// --- Manejador 'before' para la selección de búsqueda ---
+handler.before = async (m, { conn }) => {
+const userSelection = xvSearchCache[m.sender];
+if (!userSelection || !/^\d+$/.test(m.text)) return;
 
-export default handler
-
-async function search(query) {
-return new Promise(async (resolve, reject) => {
-try {
-const url = `https://www.xvideos.com/?k=${encodeURIComponent(query)}`
-
-const response = await axios.get(url)
-const $ = cheerio.load(response.data)
-const results = []
-$("div.mozaique > div").each((index, element) => {
-const title = $(element).find("p.title a").attr("title")
-const videoUrl = "https://www.xvideos.com" + $(element).find("p.title a").attr("href")
-const quality = $(element).find("span.video-hd-mark").text().trim()
-results.push({ title, url: videoUrl, quality })
-})
-resolve(results)
-} catch (error) {
-reject(error)
-}})
+const index = parseInt(m.text) - 1;
+if (index < 0 || index >= userSelection.length) {
+return m.reply("☂︎ Número inválido. Por favor, responde con un número de la lista.");
 }
-async function xvideosdl(url) {
-return new Promise((resolve, reject) => {
-fetch(`${url}`, { method: 'get' })
-.then(res => res.text())
-.then(res => {
-let $ = cheerio.load(res, { xmlMode: false })
-const title = $("meta[property='og:title']").attr("content")
-const duration = (() => { const s = parseInt($('meta[property="og:duration"]').attr('content'), 10) || 0; return s >= 3600 ? `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ${s % 60}s` : s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s` })()
-const keyword = $("meta[name='keywords']").attr("content")
-const views = $("div#video-tabs > div > div > div > div > strong.mobile-hide").text() + " views"
-const vote = $("div.rate-infos > span.rating-total-txt").text()
-const likes = $("span.rating-good-nbr").text()
-const deslikes = $("span.rating-bad-nbr").text()
-const thumb = $("meta[property='og:image']").attr("content")
-const videoUrl = $("#html5video > #html5video_base > div > a").attr("href")
-resolve({ status: 200, result: { title, duration, url: videoUrl, keyword, views, vote, likes, deslikes, thumb } })
-})
-.catch(err => reject(err))
-})
-}
+
+const selectedVideo = userSelection[index];
+delete xvSearchCache[m.sender];
+await handleDownload(m, conn, selectedVideo.link, '');
+};
+
+handler.help = ['xvideossearch <búsqueda>', 'xvideosdl <url>'];
+handler.tags = ['nsfw'];
+handler.command = ['xvideossearch', 'xvideosdl'];
+handler.group = true;
+handler.premium = true;
+
+export default handler;

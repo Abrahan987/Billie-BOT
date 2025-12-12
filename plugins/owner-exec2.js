@@ -1,27 +1,54 @@
-import cp, { exec as _exec } from 'child_process'
-import { promisify } from 'util'
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
-const exec = promisify(_exec).bind(cp)
-const handler = async (m, { conn, isOwner, isROwner, command, text, usedPrefix, args }) => {
-if (!isROwner) return
-if (conn.user.jid != conn.user.jid) return
-let o
+const execAsync = promisify(exec);
+
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+if (!text) {
+return m.reply(`${global.decor} ¿Qué comando de terminal quieres ejecutar?\n\n*Formato:* ${usedPrefix + command} [comando]`);
+}
+
+// Sistema de confirmación para comandos peligrosos
+const dangerousCommands = ['rm', 'mv', 'dd', 'reboot', 'shutdown', 'pkill', 'killall'];
+if (dangerousCommands.some(cmd => text.includes(cmd)) && (!conn.exec2Confirm || !conn.exec2Confirm[m.sender])) {
+conn.exec2Confirm = conn.exec2Confirm || {};
+conn.exec2Confirm[m.sender] = { timestamp: Date.now() };
+return m.reply(`*⚠️ ADVERTENCIA DE SEGURIDAD ⚠️*\n\n` +
+`El comando que intentas ejecutar es potencialmente destructivo.\n\n` +
+`*Vuelve a ejecutar el comando para confirmar tu acción.*`);
+}
+
+if (conn.exec2Confirm && conn.exec2Confirm[m.sender]) {
+if (Date.now() - conn.exec2Confirm[m.sender].timestamp > 30000) {
+delete conn.exec2Confirm[m.sender];
+return m.reply("☂︎ La confirmación ha expirado. Vuelve a intentarlo.");
+}
+delete conn.exec2Confirm[m.sender];
+}
+
+let stdout = '', stderr = '';
 try {
-await m.react('🕒')
-o = await exec(command.trimStart() + ' ' + text.trimEnd())
-await m.react('✔️')
+await m.react('⚙️');
+const { stdout: out, stderr: err } = await execAsync(text);
+stdout = out;
+stderr = err;
+await m.react('✔️');
 } catch (e) {
-o = e
-await m.react('✖️')
-} finally {
-const { stdout, stderr } = o
-if (stdout.trim()) m.reply(stdout)
-if (stderr.trim()) m.reply(stderr)
-}}
+stderr = e.toString();
+await m.react('✖️');
+}
 
-handler.help = ['$']
-handler.tags = ['owner']
-handler.customPrefix = ['$']
-handler.command = new RegExp
+const output = `*🝮︎︎︎︎︎︎︎ EJECUCIÓN DE TERMINAL 🝮︎︎︎︎︎︎︎*\n\n` +
+`*--- COMANDO ---*\n\`\`\`bash\n$ ${text}\n\`\`\`\n\n` +
+`*--- STDOUT ---*\n\`\`\`\n${stdout.trim() || 'Vacío'}\n\`\`\`\n\n` +
+`*--- STDERR ---*\n\`\`\`\n${stderr.trim() || 'Sin errores'}\n\`\`\``;
 
-export default handler
+await conn.reply(m.chat, output, m);
+};
+
+handler.help = ['exec2 <code>'];
+handler.tags = ['owner'];
+handler.command = ['exec2', '$', 'shell'];
+handler.owner = true;
+
+export default handler;

@@ -1,47 +1,55 @@
-import ws from "ws"
+import ws from "ws";
 
-const handler = async (m, { conn, command, usedPrefix, participants }) => {
+const handler = async (m, { conn, participants }) => {
 try {
-const users = [global.conn.user.jid, ...new Set(global.conns.filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED).map((conn) => conn.user.jid))]
-function convertirMsADiasHorasMinutosSegundos(ms) {
-const segundos = Math.floor(ms / 1000)
-const minutos = Math.floor(segundos / 60)
-const horas = Math.floor(minutos / 60)
-const días = Math.floor(horas / 24)
-const segRest = segundos % 60
-const minRest = minutos % 60
-const horasRest = horas % 24
-let resultado = ""
-if (días) resultado += `${días} días, `
-if (horasRest) resultado += `${horasRest} horas, `
-if (minRest) resultado += `${minRest} minutos, `
-if (segRest) resultado += `${segRest} segundos`
-return resultado.trim()
-}
-let groupBots = users.filter((bot) => participants.some((p) => p.id === bot))
-if (participants.some((p) => p.id === global.conn.user.jid) && !groupBots.includes(global.conn.user.jid)) { groupBots.push(global.conn.user.jid) }
-const botsGroup = groupBots.length > 0 ? groupBots.map((bot) => {
-const isMainBot = bot === global.conn.user.jid
-const v = global.conns.find((conn) => conn.user.jid === bot)
-const uptime = isMainBot ? convertirMsADiasHorasMinutosSegundos(Date.now() - global.conn.uptime) : v?.uptime ? convertirMsADiasHorasMinutosSegundos(Date.now() - v.uptime) : "Activo desde ahora"
-const mention = bot.replace(/[^0-9]/g, '')
-return `@${mention}\n> Bot: ${isMainBot ? 'Principal' : 'Sub-Bot'}\n> Online: ${uptime}`}).join("\n\n") : `✧ No hay bots activos en este grupo`
-const message = `*「 ✦ 」 Lista de bots activos*
+// Obtener todos los bots activos (principal + sub-bots)
+const allBots = [
+{ jid: global.conn.user.jid, isMain: true, uptime: global.conn.uptime },
+...global.conns
+.filter(c => c.user && c.ws.socket && c.ws.socket.readyState !== ws.CLOSED)
+.map(c => ({ jid: c.user.jid, isMain: false, uptime: c.uptime }))
+];
 
-❀ Principal: *1*
-✿ Subs: *${users.length - 1}*
+// Filtrar los bots que están en el grupo actual
+const botsInGroup = allBots.filter(bot => participants.some(p => p.id === bot.jid));
 
-❏ En este grupo: *${groupBots.length}* bots
-${botsGroup}`
-const mentionList = groupBots.map(bot => bot.endsWith("@s.whatsapp.net") ? bot : `${bot}@s.whatsapp.net`)
-rcanal.contextInfo.mentionedJid = mentionList
-await conn.sendMessage(m.chat, { text: message, ...rcanal }, { quoted: m })
+const formatBotList = (bots) => {
+if (bots.length === 0) return "No hay bots de esta red en el grupo.";
+return bots.map(bot => {
+const uptime = bot.uptime ? formatUptime(Date.now() - bot.uptime) : "Recién conectado";
+const role = bot.isMain ? "👑 Principal" : "🔌 Sub-Bot";
+return `*•* @${bot.jid.split('@')[0]} (${role})\n   *Uptime:* ${uptime}`;
+}).join('\n\n');
+};
+
+const statusMessage = `*🝮︎︎︎︎︎︎︎ ESTADO DE LA RED DE BOTS 🝮︎︎︎︎︎︎︎*\n\n` +
+`*Bots Activos en este Grupo:*\n${formatBotList(botsInGroup)}\n\n` +
+`*Total de Sub-Bots Conectados:* ${allBots.length - 1}`;
+
+await conn.reply(m.chat, statusMessage, m, { mentions: botsInGroup.map(b => b.jid) });
+
 } catch (error) {
-m.reply(`⚠︎ Se ha producido un problema.\n> Usa *${usedPrefix}report* para informarlo.\n\n${error.message}`)
-}}
+console.error("Error en botlist:", error);
+await m.reply("☂︎ Ocurrió un error al obtener la lista de bots.");
+}
+};
 
-handler.tags = ["serbot"]
-handler.help = ["botlist"]
-handler.command = ["botlist", "listbots", "listbot", "bots", "sockets", "socket"]
+function formatUptime(ms) {
+const s = Math.floor(ms / 1000);
+const m = Math.floor(s / 60);
+const h = Math.floor(m / 60);
+const d = Math.floor(h / 24);
+let parts = [];
+if (d > 0) parts.push(`${d}d`);
+if (h % 24 > 0) parts.push(`${h % 24}h`);
+if (m % 60 > 0) parts.push(`${m % 60}m`);
+if (s % 60 > 0 && parts.length < 2) parts.push(`${s % 60}s`);
+return parts.join(' ') || '0s';
+}
 
-export default handler
+handler.help = ["botlist"];
+handler.tags = ["sockets"];
+handler.command = ["botlist", "listbots"];
+handler.group = true;
+
+export default handler;
