@@ -111,3 +111,46 @@ handler.command = ['jadibot', 'serbot', 'qr', 'code'];
 handler.premium = true;
 
 export default handler;
+
+export const billieJadiBot = async ({ botPath, conn: mainConn }) => {
+    try {
+        const { state, saveCreds } = await useMultiFileAuthState(botPath);
+        const { version } = await fetchLatestBaileysVersion();
+        const sock = makeWASocket({
+            logger: pino({ level: "silent" }),
+            printQRInTerminal: false,
+            auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
+            browser: ['Billie-MD', 'Chrome', '1.0.0'],
+            version,
+            getMessage: async (key) => (mainConn.chats[key.remoteJid] && mainConn.chats[key.remoteJid].messages[key.id]) || {},
+        });
+
+        const mainHandler = await import('../handler.js');
+        sock.handler = mainHandler.handler.bind(sock);
+
+        sock.ev.on('connection.update', (update) => {
+            const { connection, lastDisconnect } = update;
+            if (connection === 'open') {
+                console.log(\`[+] Sub-bot conectado: \${sock.user?.name || sock.user?.jid}\`);
+            }
+            if (connection === 'close') {
+                const reason = new DisconnectReason(lastDisconnect?.error)?.toString();
+                console.log(\`[-] Conexión de Sub-bot \${sock.user?.name || sock.user?.jid} cerrada, razón: \${reason}\`);
+                const index = global.conns.findIndex(c => c.user?.jid === sock.user?.jid);
+                if (index !== -1) {
+                    global.conns.splice(index, 1);
+                }
+            }
+        });
+
+        sock.ev.on('creds.update', saveCreds);
+        sock.ev.on('messages.upsert', sock.handler);
+
+        if (!global.conns) {
+            global.conns = [];
+        }
+        global.conns.push(sock);
+    } catch (e) {
+        console.error(\`Error al reconectar sub-bot en \${botPath}:\`, e);
+    }
+};
