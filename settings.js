@@ -21,7 +21,7 @@ global.libreria = "Baileys Multi Device"
 global.vs = "^1.8.2|Latest"
 global.sessions = "Sessions/Principal"
 global.jadi = "Sessions/SubBot"
-global.yukiJadibts = true
+global.billieJadibts = true
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
