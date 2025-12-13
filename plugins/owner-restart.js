@@ -6,19 +6,19 @@ if (!conn.restartConfirm[confirmId]) {
 conn.restartConfirm[confirmId] = {
 timestamp: Date.now()
 };
-return m.reply(`*⚠️ CONFIRMACIÓN REQUERIDA ⚠️*\n\n` +
-`¿Estás seguro de que quieres reiniciar el bot? Esto interrumpirá todos los procesos en ejecución.\n\n` +
+return m.reply(`*☁︎ CONFIRMACIÓN REQUERIDA ☁︎*\n\n` +
+`¿Estás seguro de que quieres reiniciar el bot? Se interrumpirán todos los procesos.\n\n` +
 `*Vuelve a ejecutar el comando \`${usedPrefix + command}\` para confirmar.*`);
 }
 
 const confirmation = conn.restartConfirm[confirmId];
 if (Date.now() - confirmation.timestamp > 30000) { // 30 segundos
 delete conn.restartConfirm[confirmId];
-return m.reply("☂︎ La confirmación ha expirado. Inicia el proceso de nuevo.");
+return m.reply("☂︎ La confirmación ha expirado. Vuelve a intentarlo. ☂︎");
 }
 
 try {
-await conn.reply(m.chat, `*${global.decor} Reiniciando el sistema...*\n\nPor favor, espera un momento. ♫︎`, m);
+await conn.reply(m.chat, `*♫︎ Reiniciando... ♫︎*\n\nPor favor, espera un momento.`, m);
 // Eliminar la confirmación antes de reiniciar
 delete conn.restartConfirm[confirmId];
 // Envía una señal de reinicio al proceso principal

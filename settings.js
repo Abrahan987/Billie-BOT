@@ -25,12 +25,12 @@ global.billieJadibts = true
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
-global.botname = "ʙɪʟʟɪᴇ ʙᴏᴛ"
-global.textbot = "ʙɪʟʟɪᴇ, mᥲძᥱ ᥕі𝗍һ ᑲᥡ ᴀʙʀᴀʜᴀɴ-ᴍ"
-global.dev = "© ⍴᥆ᥕᥱrᥱძ ᑲᥡ ᴀʙʀᴀʜᴀɴ-ᴍ 𒆜"
-global.author = "© mᥲძᥱ ᥕі𝗍һ ᑲᥡ ᴀʙʀᴀʜᴀɴ-ᴍ 𒆜"
-global.etiqueta = "ᴀʙʀᴀʜᴀɴ-ᴍ"
-global.currency = "¥enes"
+global.botname = "☂︎ Billie Bot ☂︎"
+global.textbot = "♫︎ Creado por ABRAHAN-M ♫︎"
+global.dev = "☁︎ Desarrollado por ABRAHAN-M ☁︎"
+global.author = "♪ ABRAHAN-M ♪"
+global.etiqueta = "Billie"
+global.currency = "BillieCoins"
 global.banner = "https://files.catbox.moe/nsj61q.jpg"
 global.icono = "https://files.catbox.moe/boq8yt.jpg"
 global.catalogo = fs.readFileSync('./lib/catalogo.jpg')
@@ -55,7 +55,7 @@ vreden: { url: "https://api.vreden.web.id", key: null },
 delirius: { url: "https://api.delirius.store", key: null },
 zenzxz: { url: "https://api.zenzxz.my.id", key: null },
 siputzx: { url: "https://api.siputzx.my.id", key: null },
-adonix: { url: "https://api-adonix.ultraplus.click", key: 'Yuki-WaBot' }
+adonix: { url: "https://api-adonix.ultraplus.click", key: 'Billie-WaBot' }
 }
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*

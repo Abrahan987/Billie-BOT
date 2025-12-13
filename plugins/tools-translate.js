@@ -3,7 +3,7 @@ import fetch from 'node-fetch'
 
 const handler = async (m, { args, usedPrefix, command }) => {
 const defaultLang = 'es'
-const msg = `❀ Por favor, ingresé el (idioma) (texto) para traducirlo.`  
+const msg = `☁︎ Ingresa el idioma y el texto que quieres traducir. ☁︎\n> *Ejemplo:* ${usedPrefix + command} en Hello World`
 if (!args || !args[0]) {
 if (m.quoted && m.quoted.text) {
 args = [defaultLang, m.quoted.text]
@@ -17,25 +17,15 @@ lang = defaultLang
 text = args.join(' ')
 }
 try {
+await conn.reply(m.chat, `*Traduciendo...*`, m)
 await m.react('🕒')
 const result = await translate(`${text}`, { to: lang, autoCorrect: true })
 await conn.reply(m.chat, result.text, m)
 await m.react('✔️')
 } catch (error) {
 await m.react('✖️')
-await m.reply(`⚠︎ Se ha producido un problema.\n> Usa *${usedPrefix}report* para informarlo.\n\n${error.message}`, m)
-try {
-await m.react('🕒')
-conn.reply(m.chat, wait, m)
-const lol = await fetch(`https://api.lolhuman.xyz/api/translate/auto/${lang}?apikey=${lolkeysapi}&text=${text}`)
-const loll = await lol.json()
-const result2 = loll.result.translated
-await conn.reply(m.chat, result2, m)
-await m.react('✔️')
-} catch (error) {
-await m.react('✖️')
-await m.reply(`⚠︎ Se ha producido un problema.\n> Usa *${usedPrefix}report* para informarlo.\n\n${error.message}`, m)
-}}}
+m.reply(`☂︎ Ocurrió un error. ☂︎\n\n${error.message}`)
+}}
 
 handler.help = ['translate']
 handler.tags = ['tools']

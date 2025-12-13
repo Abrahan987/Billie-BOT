@@ -24,7 +24,7 @@ archive.directory('./sessions/', 'sessions');
 await archive.finalize();
 
 output.on('close', async () => {
-await conn.sendFile(m.sender, outputPath, backupFileName, `*✅ Respaldo completado.*\n\nAquí tienes el respaldo del ${date}.`, m);
+await conn.sendFile(m.sender, outputPath, backupFileName, `*♫︎ ¡Respaldo completado! ♫︎*\n\nAquí tienes el respaldo del ${date}.`, m);
 await m.react('✔️');
 // Opcional: eliminar el archivo zip después de enviarlo
 // fs.unlinkSync(outputPath);
@@ -37,7 +37,7 @@ throw err;
 } catch (error) {
 await m.react('✖️');
 console.error("Error al crear el respaldo:", error);
-await conn.reply(m.chat, "☂︎ ¡Oh, no! Ocurrió un error al crear el respaldo.", m);
+await conn.reply(m.chat, "☂︎ ¡Oh, no! Ocurrió un error al crear el respaldo. ☂︎", m);
 }};
 
 handler.help = ['backup'];
