@@ -131,11 +131,11 @@ export const billieJadiBot = async ({ botPath, conn: mainConn }) => {
         sock.ev.on('connection.update', (update) => {
             const { connection, lastDisconnect } = update;
             if (connection === 'open') {
-                console.log(\`[+] Sub-bot conectado: \${sock.user?.name || sock.user?.jid}\`);
+                console.log(`[+] Sub-bot conectado: ${sock.user?.name || sock.user?.jid}`);
             }
             if (connection === 'close') {
                 const reason = new DisconnectReason(lastDisconnect?.error)?.toString();
-                console.log(\`[-] Conexión de Sub-bot \${sock.user?.name || sock.user?.jid} cerrada, razón: \${reason}\`);
+                console.log(`[-] Conexión de Sub-bot ${sock.user?.name || sock.user?.jid} cerrada, razón: ${reason}`);
                 const index = global.conns.findIndex(c => c.user?.jid === sock.user?.jid);
                 if (index !== -1) {
                     global.conns.splice(index, 1);
@@ -151,6 +151,6 @@ export const billieJadiBot = async ({ botPath, conn: mainConn }) => {
         }
         global.conns.push(sock);
     } catch (e) {
-        console.error(\`Error al reconectar sub-bot en \${botPath}:\`, e);
+        console.error(`Error al reconectar sub-bot en ${botPath}:`, e);
     }
 };
