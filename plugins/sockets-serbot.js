@@ -1,4 +1,5 @@
 import { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
+import { Boom } from "@hapi/boom";
 import qrcode from "qrcode";
 import NodeCache from "node-cache";
 import fs from "fs";
@@ -8,6 +9,45 @@ import pino from 'pino';
 import { makeWASocket } from '../lib/simple.js';
 
 const pairingCodeStore = new NodeCache();
+
+export const billieJadiBot = async ({ pathBillieJadiBot }) => {
+    try {
+        const { state, saveCreds } = await useMultiFileAuthState(pathBillieJadiBot);
+        const { version } = await fetchLatestBaileysVersion();
+
+        const sock = makeWASocket({
+            logger: pino({ level: "silent" }),
+            printQRInTerminal: false,
+            auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
+            browser: ['Billie-MD', 'Chrome', '1.0.0'],
+            version
+        });
+
+        sock.ev.on('connection.update', async (update) => {
+            const { connection, lastDisconnect } = update;
+            const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+
+            if (connection === 'close') {
+                console.log(`🔌 Conexión de Sub-Bot cerrada. Motivo: ${reason || 'desconocido'}`);
+                if (reason === DisconnectReason.loggedOut) {
+                    console.log(`Sesión de Sub-Bot cerrada, eliminando credenciales: ${pathBillieJadiBot}`);
+                    fs.rmSync(pathBillieJadiBot, { recursive: true, force: true });
+                }
+                const index = global.conns.indexOf(sock);
+                if (index !== -1) {
+                    global.conns.splice(index, 1);
+                }
+            }
+        });
+
+        sock.ev.on('creds.update', saveCreds);
+
+        global.conns.push(sock);
+        console.log(`✓ Sub-Bot reconectado desde ${pathBillieJadiBot}`);
+    } catch (e) {
+        console.error(`Error al reconectar Sub-Bot desde ${pathBillieJadiBot}:`, e);
+    }
+};
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
 if (!global.db.data.settings[conn.user.jid]?.jadibotmd) {
@@ -111,46 +151,3 @@ handler.command = ['jadibot', 'serbot', 'qr', 'code'];
 handler.premium = true;
 
 export default handler;
-
-export const billieJadiBot = async ({ botPath, conn: mainConn }) => {
-    try {
-        const { state, saveCreds } = await useMultiFileAuthState(botPath);
-        const { version } = await fetchLatestBaileysVersion();
-        const sock = makeWASocket({
-            logger: pino({ level: "silent" }),
-            printQRInTerminal: false,
-            auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
-            browser: ['Billie-MD', 'Chrome', '1.0.0'],
-            version,
-            getMessage: async (key) => (mainConn.chats[key.remoteJid] && mainConn.chats[key.remoteJid].messages[key.id]) || {},
-        });
-
-        const mainHandler = await import('../handler.js');
-        sock.handler = mainHandler.handler.bind(sock);
-
-        sock.ev.on('connection.update', (update) => {
-            const { connection, lastDisconnect } = update;
-            if (connection === 'open') {
-                console.log(`[+] Sub-bot conectado: ${sock.user?.name || sock.user?.jid}`);
-            }
-            if (connection === 'close') {
-                const reason = new DisconnectReason(lastDisconnect?.error)?.toString();
-                console.log(`[-] Conexión de Sub-bot ${sock.user?.name || sock.user?.jid} cerrada, razón: ${reason}`);
-                const index = global.conns.findIndex(c => c.user?.jid === sock.user?.jid);
-                if (index !== -1) {
-                    global.conns.splice(index, 1);
-                }
-            }
-        });
-
-        sock.ev.on('creds.update', saveCreds);
-        sock.ev.on('messages.upsert', sock.handler);
-
-        if (!global.conns) {
-            global.conns = [];
-        }
-        global.conns.push(sock);
-    } catch (e) {
-        console.error(`Error al reconectar sub-bot en ${botPath}:`, e);
-    }
-};

@@ -12,10 +12,10 @@ await conn.reply(m.chat, "*Buscando actualizaciones...*", m);
 const { stdout: status } = await execAsync('git status --porcelain');
 if (status.trim()) {
 await m.react('⚠️');
-return conn.reply(m.chat, `*⚠️ ADVERTENCIA: CAMBIOS LOCALES DETECTADOS ⚠️*\n\n` +
-`No se puede actualizar automáticamente porque hay cambios locales sin confirmar:\n\n` +
+return conn.reply(m.chat, `*☁︎ ADVERTENCIA: CAMBIOS LOCALES ☁︎*\n\n` +
+`No puedo actualizar automáticamente porque hay cambios locales sin guardar:\n\n` +
 `\`\`\`\n${status}\`\`\`\n\n` +
-`Por favor, confirma tus cambios o restáuralos antes de actualizar.`, m);
+`Por favor, guarda tus cambios o restáuralos.`, m);
 }
 
 // 2. Obtener el commit actual
@@ -28,7 +28,7 @@ await execAsync('git fetch');
 const { stdout: diff } = await execAsync('git diff HEAD...origin/main');
 if (!diff.trim()) {
 await m.react('✅');
-return conn.reply(m.chat, "*✨ ¡Estás al día!* No hay nuevas actualizaciones disponibles.", m);
+return conn.reply(m.chat, "*♫︎ ¡Estás al día!* No hay nuevas actualizaciones.", m);
 }
 
 // 5. Aplicar las actualizaciones
@@ -36,9 +36,9 @@ const { stdout: pull } = await execAsync('git pull origin main');
 await m.react('✔️');
 
 // 6. Mostrar el resultado
-const updateLog = `*🝮︎︎︎︎︎︎︎ ACTUALIZACIÓN COMPLETADA 🝮︎︎︎︎︎︎︎*\n\n` +
-`El bot ha sido actualizado correctamente. Se recomienda reiniciar para aplicar todos los cambios.\n\n` +
-`*--- Resumen de la Actualización ---*\n` +
+const updateLog = `*♫︎ ¡Actualización Completada! ♫︎*\n\n` +
+`Me he actualizado correctamente. Se recomienda reiniciar para aplicar todos los cambios.\n\n` +
+`*Resumen:*\n` +
 `\`\`\`\n${pull}\n\`\`\``;
 
 await conn.reply(m.chat, updateLog, m);
@@ -46,7 +46,7 @@ await conn.reply(m.chat, updateLog, m);
 } catch (error) {
 await m.react('✖️');
 console.error("Error al actualizar:", error);
-await conn.reply(m.chat, `*☂︎ ¡Oh, no! Ocurrió un error al intentar actualizar.*\n\n` +
+await conn.reply(m.chat, `*☂︎ ¡Oh, no! Ocurrió un error al actualizar.*\n\n` +
 `*Error:*\n\`\`\`\n${error.stderr || error.message}\n\`\`\``, m);
 }};
 

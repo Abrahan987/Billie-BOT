@@ -15,7 +15,7 @@ conn.deletepluginConfirm = conn.deletepluginConfirm || {};
 
 if (!conn.deletepluginConfirm[confirmId]) {
 conn.deletepluginConfirm[confirmId] = { timestamp: Date.now() };
-return m.reply(`*⚠️ ADVERTENCIA ⚠️*\n\n` +
+return m.reply(`*☁︎ ADVERTENCIA ☁︎*\n\n` +
 `¿Estás seguro de que quieres eliminar el plugin \`${pluginName}\`?\n\n` +
 `*Esta acción es irreversible.*\n\n` +
 `Vuelve a ejecutar el comando para confirmar.`);
@@ -24,15 +24,15 @@ return m.reply(`*⚠️ ADVERTENCIA ⚠️*\n\n` +
 const confirmation = conn.deletepluginConfirm[confirmId];
 if (Date.now() - confirmation.timestamp > 30000) { // 30 segundos
 delete conn.deletepluginConfirm[confirmId];
-return m.reply("☂︎ La confirmación ha expirado.");
+return m.reply("☂︎ La confirmación ha expirado. Vuelve a intentarlo. ☂︎");
 }
 
 try {
 await fs.unlink(pluginPath);
-await m.reply(`*${global.decor} ¡Plugin eliminado con éxito!*\n\nEl archivo \`${pluginPath}\` ha sido eliminado.`);
+await m.reply(`*♫︎ ¡Plugin eliminado! ♫︎*\n\nEl archivo \`${pluginPath}\` ha sido eliminado.`);
 } catch (error) {
 console.error("Error al eliminar el plugin:", error);
-await m.reply(`☂︎ ¡Oh, no! Ocurrió un error al intentar eliminar el plugin. Es posible que el archivo no exista.`);
+await m.reply(`☂︎ Ocurrió un error al eliminar el plugin. Puede que el archivo no exista. ☂︎`);
 } finally {
 delete conn.deletepluginConfirm[confirmId];
 }

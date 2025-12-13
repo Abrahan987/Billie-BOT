@@ -4,42 +4,42 @@ const acr = new acrcloud({ host: "identify-ap-southeast-1.acrcloud.com", access_
 let handler = async (m, { conn, text, usedPrefix, command }) => {
 let q = m.quoted ? m.quoted : m
 if (!q.mimetype || (!q.mimetype.includes("audio") && !q.mimetype.includes("video"))) {
-return m.reply("❀ Por favor, responde al audio del cual deseas buscar el título.")
+return m.reply("☁︎ Responde al audio o video del que quieres saber el nombre. ☁︎")
 }
 let buffer = await q.download()
 try {
+await conn.reply(m.chat, `*Buscando...*`, m)
 await m.react('🕒')
 let data = await whatmusic(buffer)
 if (!data.length) {
 await m.react('✖️')
-return m.reply("✧ No se encontraron datos de la canción")
+return m.reply("☂︎ No se encontró la canción. ☂︎")
 }
-let cap = "*乂 ¡SHAZAM - MUSIC! 乂*\n\n"
+let cap = "*♫︎ ¡Canción Encontrada! ♫︎*\n\n"
 for (let result of data) {
 const enlaces = Array.isArray(result.url) ? result.url.filter(x => x) : []
-cap += `✐ Título » ${result.title}\n`
-cap += `✦ Artista » ${result.artist}\n`
-cap += `ⴵ Duración » ${result.duration}\n`
-cap += `🜸 Enlaces » ${enlaces.map(i => `\n${i}`).join("\n")}\n`
-if (enlaces.length) cap += "••••••••••••••••••••••••••••••••••••••\n"
+cap += `*➪ Título:* ${result.title}\n`
+cap += `*➪ Artista:* ${result.artist}\n`
+cap += `*➪ Duración:* ${result.duration}\n`
+if (enlaces.length) cap += `*➪ Enlaces:*\n${enlaces.join("\n")}\n\n`
 }
 await conn.relayMessage(m.chat, {
 extendedTextMessage: {
-text: cap,
+text: cap.trim(),
 contextInfo: {
 externalAdReply: {
-title: '✧ Whats • Music ✧',
-body: dev,
+title: '♪ WhatMusic ♪',
+body: global.dev,
 mediaType: 1,
 previewType: 0,
 renderLargerThumbnail: true,
 thumbnail: await (await fetch('https://raw.githubusercontent.com/The-King-Destroy/Adiciones/main/Contenido/1742781294508.jpeg')).buffer(),
-sourceUrl: redes
+sourceUrl: global.redes
 }}}}, { quoted: m })
 await m.react('✔️')
 } catch (error) {
 await m.react('✖️')
-m.reply(`⚠︎ Se ha producido un problema.\n> Usa *${usedPrefix}report* para informarlo.\n\n` + error.message)
+m.reply(`☂︎ Ocurrió un error. ☂︎\n\n` + error.message)
 }}
 
 handler.help = ["whatmusic"]

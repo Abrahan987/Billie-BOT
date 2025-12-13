@@ -263,7 +263,7 @@ const botPath = join(rutaJadiBot, gjbts)
 if (existsSync(botPath) && statSync(botPath).isDirectory()) {
 const readBotPath = readdirSync(botPath)
 if (readBotPath.includes(creds)) {
-billieJadiBot({ botPath: botPath, conn: conn })
+billieJadiBot({ pathBillieJadiBot: botPath, m: null, conn, args: '', usedPrefix: '/', command: 'serbot' })
 }}}}}
 
 const pluginFolder = global.__dirname(join(__dirname, './plugins/index'))

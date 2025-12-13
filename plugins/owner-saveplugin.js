@@ -3,10 +3,10 @@ import path from 'path';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
 if (!text) {
-return m.reply(`${global.decor} ¿Qué nombre le quieres dar al plugin?\n\n*Formato:* ${usedPrefix + command} [nombre-del-plugin]`);
+return m.reply(`☁︎ ¿Qué nombre quieres darle al plugin? ☁︎\n\n*Formato:* ${usedPrefix + command} [nombre-del-plugin]`);
 }
 if (!m.quoted || !m.quoted.text) {
-return m.reply("☂︎ Debes responder al código que quieres guardar como un plugin.");
+return m.reply("☂︎ Debes responder al código que quieres guardar como un plugin. ☂︎");
 }
 
 const pluginName = text.endsWith('.js') ? text : `${text}.js`;
@@ -20,15 +20,15 @@ conn.savepluginConfirm = conn.savepluginConfirm || {};
 
 if (!conn.savepluginConfirm[confirmId]) {
 conn.savepluginConfirm[confirmId] = { timestamp: Date.now() };
-return m.reply(`*⚠️ ADVERTENCIA ⚠️*\n\n` +
-`El plugin \`${pluginName}\` ya existe. ¿Estás seguro de que quieres sobrescribirlo?\n\n` +
+return m.reply(`*☁︎ ADVERTENCIA ☁︎*\n\n` +
+`El plugin \`${pluginName}\` ya existe. ¿Quieres sobrescribirlo?\n\n` +
 `*Vuelve a ejecutar el comando para confirmar.*`);
 }
 
 const confirmation = conn.savepluginConfirm[confirmId];
 if (Date.now() - confirmation.timestamp > 30000) { // 30 segundos
 delete conn.savepluginConfirm[confirmId];
-return m.reply("☂︎ La confirmación ha expirado.");
+return m.reply("☂︎ La confirmación ha expirado. Vuelve a intentarlo. ☂︎");
 }
 delete conn.savepluginConfirm[confirmId];
 } catch (e) {
@@ -37,10 +37,10 @@ delete conn.savepluginConfirm[confirmId];
 
 try {
 await fs.writeFile(pluginPath, m.quoted.text);
-await m.reply(`*${global.decor} ¡Plugin guardado con éxito!*\n\n*Ruta:* \`${pluginPath}\``);
+await m.reply(`*♫︎ ¡Plugin guardado! ♫︎*\n\n*Ruta:* \`${pluginPath}\``);
 } catch (error) {
 console.error("Error al guardar el plugin:", error);
-await m.reply("☂︎ ¡Oh, no! Ocurrió un error al intentar guardar el plugin.");
+await m.reply("☂︎ Ocurrió un error al guardar el plugin. ☂︎");
 }
 };
 

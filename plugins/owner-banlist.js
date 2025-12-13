@@ -4,12 +4,12 @@ const bannedUsers = Object.entries(global.db.data.users)
 .map(([jid, user]) => ({ jid, reason: user.bannedReason || 'Sin motivo' }));
 
 if (bannedUsers.length === 0) {
-return m.reply("✨ ¡Excelente! No hay ningún usuario baneado en la base de datos.");
+return m.reply("☁︎ ¡Excelente! No hay ningún usuario baneado. ☁︎");
 }
 
 const userList = bannedUsers.map(user => `*•* @${user.jid.split('@')[0]}\n   *Motivo:* ${user.reason}`).join('\n\n');
 
-const listMessage = `*🝮︎︎︎︎︎︎︎ LISTA DE USUARIOS BANEADOS 🝮︎︎︎︎︎︎︎*\n\n` +
+const listMessage = `*♫︎ Lista de Usuarios Baneados ♫︎*\n\n` +
 `*Total:* ${bannedUsers.length}\n\n` +
 `${userList}`;
 

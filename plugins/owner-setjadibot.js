@@ -8,24 +8,24 @@ const action = text.trim().toLowerCase();
 
 if (action === 'on' || action === 'enable') {
 if (botSettings.jadibotmd) {
-return m.reply("✨ El modo Jadibot ya está activado.");
+return m.reply("☁︎ El modo Jadibot ya está activado. ☁︎");
 }
 botSettings.jadibotmd = true;
-await m.reply(`*${global.decor} ¡Modo Jadibot activado!*\n\nAhora otros usuarios podrán conectarse como sub-bots.`);
+await m.reply(`*♫︎ ¡Modo Jadibot Activado! ♫︎*\n\nAhora otros usuarios podrán conectarse como sub-bots.`);
 } else if (action === 'off' || action === 'disable') {
 if (!botSettings.jadibotmd) {
-return m.reply("✨ El modo Jadibot ya está desactivado.");
+return m.reply("☁︎ El modo Jadibot ya está desactivado. ☁︎");
 }
 botSettings.jadibotmd = false;
-await m.reply(`*${global.decor} ¡Modo Jadibot desactivado!*\n\nLa conexión de nuevos sub-bots ha sido deshabilitada.`);
+await m.reply(`*♫︎ ¡Modo Jadibot Desactivado! ♫︎*\n\nSe ha deshabilitado la conexión de nuevos sub-bots.`);
 } else {
 const status = botSettings.jadibotmd ? '🟢 ACTIVADO' : '🔴 DESACTIVADO';
-const helpMessage = `*🝮︎︎︎︎︎︎︎ GESTIÓN DE JADIBOT 🝮︎︎︎︎︎︎︎*\n\n` +
-`*Estado actual:* ${status}\n\n` +
+const helpMessage = `*☁︎ Gestión de Sub-Bots ☁︎*\n\n` +
+`*➪ Estado actual:* ${status}\n\n` +
 `Controla si otros usuarios pueden conectarse como sub-bots.\n\n` +
-`*Comandos disponibles:*\n` +
-`*   \`${usedPrefix + command} on\` - Permite la conexión de sub-bots.\n` +
-`*   \`${usedPrefix + command} off\` - Bloquea la conexión de nuevos sub-bots.`;
+`*Comandos:*\n` +
+`*•* \`${usedPrefix + command} on\` - Activar\n` +
+`*•* \`${usedPrefix + command} off\` - Desactivar`;
 await m.reply(helpMessage);
 }
 };

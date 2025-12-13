@@ -19,19 +19,19 @@ const amountStr = text.split(' ').find(arg => !arg.startsWith('@'));
 const amount = parseInt(amountStr);
 
 if (!target || !amount || isNaN(amount)) {
-return m.reply(`${global.decor} ¿A quién y cuánto quieres añadir?\n\n*Formato:* ${usedPrefix + command} @usuario <cantidad>`);
+return m.reply(`☁︎ ¿A quién y cuánto quieres añadir? ☁︎\n\n*Formato:* ${usedPrefix + command} @usuario <cantidad>`);
 }
 
 const user = global.db.data.users[target];
-if (!user) return m.reply("☂︎ Usuario no encontrado en la base de datos.");
+if (!user) return m.reply("☂︎ Usuario no encontrado en la base de datos. ☂︎");
 
 user[currencyType] = (user[currencyType] || 0) + amount;
 
-const receipt = `*🝮︎︎︎︎︎︎︎ TRANSACCIÓN DE MODERADOR 🝮︎︎︎︎︎︎︎*\n\n` +
-`*Tipo:* Añadir ${currencyName}\n` +
-`*Usuario:* @${target.split('@')[0]}\n` +
-`*Monto:* ${amount.toLocaleString()}\n\n` +
-`*Nuevo Total de ${currencyName}:* ${user[currencyType].toLocaleString()}`;
+const receipt = `*♫︎ Transacción de Moderador ♫︎*\n\n` +
+`*➪ Tipo:* Añadir ${currencyName}\n` +
+`*➪ Usuario:* @${target.split('@')[0]}\n` +
+`*➪ Monto:* ${amount.toLocaleString()}\n\n` +
+`*Total de ${currencyName}:* ${user[currencyType].toLocaleString()}`;
 
 await conn.reply(m.chat, receipt, m, { mentions: [target] });
 }
@@ -44,7 +44,7 @@ const premiumUsers = Object.entries(global.db.data.users)
 .sort(([, a], [, b]) => (a.premiumTime || 0) - (b.premiumTime || 0));
 
 if (premiumUsers.length === 0) {
-return m.reply("☂︎ Actualmente no hay usuarios Premium.");
+return m.reply("☁︎ Actualmente no hay usuarios Premium. ☁︎");
 }
 
 const userList = premiumUsers.map(([jid, user]) => {
@@ -52,7 +52,7 @@ const expiration = user.premiumTime ? formatTime(user.premiumTime - now) : "Perm
 return `*•* @${jid.split('@')[0]} (*Expira en:* ${expiration})`;
 }).join('\n');
 
-const listMessage = `*🝮︎︎︎︎︎︎︎ LISTA DE USUARIOS PREMIUM 🝮︎︎︎︎︎︎︎*\n\n${userList}`;
+const listMessage = `*♫︎ Lista de Usuarios Premium ♫︎*\n\n${userList}`;
 
 await conn.reply(m.chat, listMessage, m, { mentions: premiumUsers.map(([jid]) => jid) });
 }
