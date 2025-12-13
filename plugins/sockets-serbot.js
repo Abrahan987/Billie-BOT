@@ -62,7 +62,7 @@ return conn.reply(m.chat, `シ︎ Debes esperar *${formatTime(timeLeft)}* antes 
 }
 
 const usePairingCode = args[0]?.toLowerCase() === 'code';
-const dir = path.join('./sessions', m.sender.split('@')[0]);
+const dir = path.join(global.jadi, m.sender.split('@')[0]);
 
 if (global.conns.some(c => c.user?.jid === m.sender)) {
 return m.reply("☂︎ Ya tienes una sesión de Jadibot activa. Usa el comando `stop` para detenerla antes de iniciar una nueva.");

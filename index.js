@@ -249,6 +249,28 @@ console.error("Rechazo no manejado detectado:", reason)
 
 global.rutaJadiBot = join(__dirname, `./${jadi}`)
 if (global.billieJadibts) {
+// Script de migración de sesiones de sub-bot
+const oldSessionsDir = join(__dirname, './sessions');
+const newSessionsDir = global.rutaJadiBot;
+if (existsSync(oldSessionsDir) && statSync(oldSessionsDir).isDirectory()) {
+const oldSessionFiles = readdirSync(oldSessionsDir).filter(file =>
+!file.endsWith('.json') && statSync(join(oldSessionsDir, file)).isDirectory()
+);
+if (oldSessionFiles.length > 0) {
+console.log(chalk.yellow('→ Migrando sesiones de sub-bot a la nueva estructura...'));
+oldSessionFiles.forEach(session => {
+const oldPath = join(oldSessionsDir, session);
+const newPath = join(newSessionsDir, session);
+if (!existsSync(newPath)) {
+fs.renameSync(oldPath, newPath);
+console.log(chalk.green(`  ✓ Sesión '${session}' migrada.`));
+}
+});
+console.log(chalk.green('→ Migración completada.'));
+}
+}
+// Fin del script de migración
+
 if (!existsSync(global.rutaJadiBot)) {
 mkdirSync(global.rutaJadiBot, { recursive: true })
 console.log(chalk.bold.cyan(`ꕥ La carpeta: ${jadi} se creó correctamente.`))
