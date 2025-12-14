@@ -259,27 +259,51 @@ let txt = `
 > BY ABRAHAN-M
 `.trim()
 
-await conn.sendMessage(m.chat, {
-text: txt,
-contextInfo: {
-mentionedJid: [userId],
-isForwarded: true,
-forwardedNewsletterMessageInfo: {
-newsletterJid: channelRD.id,
-serverMessageId: '',
-newsletterName: channelRD.name
-},
-externalAdReply: {
-title: botname,
-body: textbot,
-mediaType: 1,
-mediaUrl: redes,
-sourceUrl: redes,
-thumbnail: await (await fetch(banner)).buffer(),
-showAdAttribution: false,
-containsAutoReply: true,
-renderLargerThumbnail: true
-}}}, { quoted: m })
+let settings = global.db.data.settings[conn.user.jid]
+if (settings.menutype === 'video') {
+    await conn.sendMessage(m.chat, {
+        video: { url: global.video },
+        caption: txt,
+        gifPlayback: true,
+        contextInfo: {
+            mentionedJid: [userId],
+            externalAdReply: {
+                title: botname,
+                body: textbot,
+                thumbnail: await(await fetch(global.icono)).buffer(),
+                sourceUrl: global.github,
+                mediaUrl: global.github,
+                mediaType: 1,
+                showAdAttribution: false,
+                renderLargerThumbnail: true
+            }
+        }
+    }, { quoted: m })
+} else {
+    await conn.sendMessage(m.chat, {
+        text: txt,
+        contextInfo: {
+            mentionedJid: [userId],
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: global.channel,
+                serverMessageId: '',
+                newsletterName: global.botname
+            },
+            externalAdReply: {
+                title: botname,
+                body: textbot,
+                mediaType: 1,
+                mediaUrl: global.github,
+                sourceUrl: global.github,
+                thumbnail: await (await fetch(global.banner)).buffer(),
+                showAdAttribution: false,
+                containsAutoReply: true,
+                renderLargerThumbnail: true
+            }
+        }
+    }, { quoted: m })
+}
 }
 
 handler.help = ['menu']

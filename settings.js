@@ -33,6 +33,7 @@ global.etiqueta = "ᴀʙʀᴀʜᴀɴ-ᴍ"
 global.currency = "¥enes"
 global.banner = "https://files.catbox.moe/nsj61q.jpg"
 global.icono = "https://files.catbox.moe/boq8yt.jpg"
+global.video = "https://files.catbox.moe/l6d1x7.mp4"
 global.catalogo = fs.readFileSync('./lib/catalogo.jpg')
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*

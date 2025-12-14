@@ -104,9 +104,11 @@ if (typeof settings !== "object") global.db.data.settings[this.user.jid] = {}
 if (settings) {
 if (!("self" in settings)) settings.self = false
 if (!("jadibotmd" in settings)) settings.jadibotmd = true
+if (!("menutype" in settings)) settings.menutype = "imagen"
 } else global.db.data.settings[this.user.jid] = {
 self: false,
-jadibotmd: true
+jadibotmd: true,
+menutype: "imagen"
 }} catch (e) {
 console.error(e)
 }
