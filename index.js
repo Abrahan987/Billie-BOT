@@ -191,6 +191,7 @@ console.log(chalk.green.bold(`[ ✿ ]  Escanea este código QR`))
 }}
 if (connection === "open") {
 const userJid = jidNormalizedUser(conn.user.id)
+global.mainBotJid = conn.user.id
 const userName = conn.user.name || conn.user.verifiedName || "Desconocido"
 await joinChannels(conn)
 console.log(chalk.green.bold(`[ ✿ ]  Conectado a: ${userName}`))
