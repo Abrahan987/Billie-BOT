@@ -21,15 +21,12 @@ const info = `「✦」Descargando *<${title}>*\n\n> ❑ Canal » *${author.name
 const isAudio = ['play', 'yta', 'ytmp3', 'playaudio'].includes(command)
 const isVideo = ['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)
 
-const [thumbResult, media] = await Promise.all([
-  conn.getFile(thumbnail),
-  isAudio ? getAud(url) : getVid(url)
-])
-
-if (!media?.url) throw `⚠ No se pudo obtener el ${isAudio ? 'audio' : 'video'}.`
-
+const thumbResult = await conn.getFile(thumbnail)
 const thumb = thumbResult.data
 await conn.sendMessage(m.chat, { image: thumb, caption: info }, { quoted: m })
+
+const media = isAudio ? await getAud(url) : await getVid(url)
+if (!media?.url) throw `⚠ No se pudo obtener el ${isAudio ? 'audio' : 'video'}.`
 m.reply(`> ❀ *${isAudio ? 'Audio' : 'Vídeo'} procesado. Servidor:* \`${media.api}\``)
 
 if (isAudio) {
