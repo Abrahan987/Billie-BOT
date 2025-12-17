@@ -20,6 +20,7 @@ import { Boom } from '@hapi/boom'
 import { makeWASocket, protoType, serialize } from './lib/simple.js'
 import { Low, JSONFile } from 'lowdb'
 import store from './lib/store.js'
+import { mergeCacheToDB } from './lib/cache.js'
 const { proto } = (await import('@whiskeysockets/baileys')).default
 import pkg from 'google-libphonenumber'
 const { PhoneNumberUtil } = pkg
@@ -110,35 +111,41 @@ console.log(chalk.bold.redBright(`No se permiten numeros que no sean 1 o 2, tamp
 }} while (opcion !== '1' && opcion !== '2' || fs.existsSync(`./${sessions}/creds.json`))
 }
 console.info = () => {}
-const connectionOptions = {
-logger: pino({ level: 'silent' }),
-printQRInTerminal: opcion == '1' ? true : methodCodeQR ? true : false,
-mobile: MethodMobile,
-browser: ["MacOs", "Safari"],
-auth: {
-creds: state.creds,
-keys: makeCacheableSignalKeyStore(state.keys, Pino({ level: "fatal" }).child({ level: "fatal" })),
-},
-markOnlineOnConnect: false,
-generateHighQualityLinkPreview: true,
-syncFullHistory: false,
-getMessage: async (key) => {
-try {
-let jid = jidNormalizedUser(key.remoteJid)
-let msg = await store.loadMessage(jid, key.id)
-return msg?.message || ""
-} catch (error) {
-return ""
-}},
-msgRetryCounterCache: msgRetryCounterCache || new Map(),
-userDevicesCache: userDevicesCache || new Map(),
-defaultQueryTimeoutMs: undefined,
-cachedGroupMetadata: (jid) => global.conn.chats[jid] ?? {},
-version: version,
-keepAliveIntervalMs: 55000,
-maxIdleTimeMs: 60000,
+
+function getConnectionOptions() {
+  const ultra = global.ultra
+  return {
+    logger: pino({ level: ultra ? 'silent' : 'info' }),
+    printQRInTerminal: opcion == '1' ? true : methodCodeQR ? true : false,
+    mobile: MethodMobile,
+    browser: ["MacOs", "Safari"],
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, Pino({ level: "fatal" }).child({ level: "fatal" })),
+    },
+    markOnlineOnConnect: false,
+    generateHighQualityLinkPreview: true,
+    syncFullHistory: false,
+    getMessage: async (key) => {
+      try {
+        let jid = jidNormalizedUser(key.remoteJid)
+        let msg = await store.loadMessage(jid, key.id)
+        return msg?.message || ""
+      } catch (error) {
+        return ""
+      }
+    },
+    msgRetryCounterCache: msgRetryCounterCache || new Map(),
+    userDevicesCache: userDevicesCache || new Map(),
+    defaultQueryTimeoutMs: undefined,
+    cachedGroupMetadata: (jid) => global.conn.chats[jid] ?? {},
+    version: version,
+    keepAliveIntervalMs: ultra ? 30000 : 55000,
+    maxIdleTimeMs: ultra ? 45000 : 60000,
+  }
 }
-global.conn = makeWASocket(connectionOptions)
+
+global.conn = makeWASocket(getConnectionOptions())
 conn.ev.on("creds.update", saveCreds)
 
 if (!fs.existsSync(`./${sessions}/creds.json`)) {
@@ -167,12 +174,24 @@ conn.isInit = false
 conn.well = false
 conn.logger.info(`[ ✿ ]  H E C H O\n`)
 if (!opts['test']) {
-if (global.db) setInterval(async () => {
-if (global.db.data) await global.db.write()
-if (opts['autocleartmp'] && (global.support || {}).find) {
-const tmp = [os.tmpdir(), 'tmp', `${jadi}`]
-tmp.forEach((filename) => cp.spawn('find', [filename, '-amin', '3', '-type', 'f', '-delete']))
-}}, 30 * 1000)
+  let lastUltraSave = Date.now()
+  setInterval(async () => {
+    if (global.db.data) {
+      if (global.ultra) {
+        if (Date.now() - lastUltraSave >= 1 * 60 * 1000) {
+          mergeCacheToDB()
+          await global.db.write()
+          lastUltraSave = Date.now()
+        }
+      } else {
+        await global.db.write()
+      }
+    }
+    if (opts['autocleartmp'] && (global.support || {}).find && !global.ultra) {
+      const tmp = [os.tmpdir(), 'tmp', `${jadi}`]
+      tmp.forEach((filename) => cp.spawn('find', [filename, '-amin', '3', '-type', 'f', '-delete']))
+    }
+  }, 30 * 1000)
 }
 
 async function connectionUpdate(update) {
@@ -219,7 +238,7 @@ try {
 global.conn.ws.close()
 } catch { }
 conn.ev.removeAllListeners()
-global.conn = makeWASocket(connectionOptions, { chats: oldChats })
+global.conn = makeWASocket(getConnectionOptions(), { chats: oldChats })
 isInit = true
 }
 if (!isInit) {
@@ -246,6 +265,19 @@ return true
 process.on('unhandledRejection', (reason, promise) => {
 console.error("Rechazo no manejado detectado:", reason)
 })
+
+async function gracefulShutdown() {
+  if (global.ultra) {
+    console.log(chalk.yellow('Modo Ultra detectado. Guardando cache en la base de datos...'))
+    mergeCacheToDB()
+    await global.db.write()
+    console.log(chalk.green('Cache guardado exitosamente.'))
+  }
+  process.exit(0)
+}
+
+process.on('SIGINT', gracefulShutdown)
+process.on('SIGTERM', gracefulShutdown)
 
 global.rutaJadiBot = join(__dirname, `./${jadi}`)
 if (global.yukiJadibts) {
@@ -330,6 +362,7 @@ const s = global.support = { ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, f
 Object.freeze(global.support)
 }
 // Tmp
+if (!global.ultra) {
 setInterval(async () => {
 const tmpDir = join(__dirname, 'tmp')
 try {
@@ -340,7 +373,8 @@ unlinkSync(filePath)})
 console.log(chalk.gray(`→ Archivos de la carpeta TMP eliminados`))
 } catch {
 console.log(chalk.gray(`→ Los archivos de la carpeta TMP no se pudieron eliminar`))
-}}, 30 * 1000) 
+}}, 30 * 1000)
+}
 _quickTest().catch(console.error)
 async function isValidPhoneNumber(number) {
 try {
