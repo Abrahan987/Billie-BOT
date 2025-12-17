@@ -147,6 +147,22 @@ const isRAdmin = userGroup?.admin == "superadmin" || false
 const isAdmin = isRAdmin || userGroup?.admin == "admin" || false
 const isBotAdmin = botGroup?.admin || false
 
+if (m.mtype === 'stickerMessage' && global.db.data.sticker) {
+    let hash = m.fileSha256.toString('base64');
+    let sticker = global.db.data.sticker[hash];
+    if (sticker && sticker.text) {
+        let text = sticker.text;
+        const pref = /^[\\/!#.]/;
+        if (pref.test(text)) {
+            m.text = text;
+        } else {
+            m.text = '.' + text;
+        }
+        m.mentionedJid = sticker.mentionedJid;
+        console.log(chalk.green('Executing sticker command:'), m.text);
+    }
+}
+
 const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), "./plugins")
 for (const name in global.plugins) {
 const plugin = global.plugins[name]
