@@ -153,20 +153,13 @@ if (m.mtype === 'stickerMessage' && global.db.data.sticker) {
     if (sticker && sticker.text) {
         let text = sticker.text;
         const pref = /^[\\/!#.]/;
-        if (!pref.test(text)) {
-            text = '.' + text;
-        }
-        let target = m.quoted ? m.quoted.sender : null;
-        if (target) {
-            const mentionedUser = '@' + target.split('@')[0];
-            m.text = `${text} ${mentionedUser}`;
-            m.mentionedJid = [target];
-            console.log(chalk.green('Executing sticker command with target:'), m.text);
-        } else {
+        if (pref.test(text)) {
             m.text = text;
-            m.mentionedJid = sticker.mentionedJid || [];
-            console.log(chalk.green('Executing sticker command:'), m.text);
+        } else {
+            m.text = '.' + text;
         }
+        m.mentionedJid = sticker.mentionedJid;
+        console.log(chalk.green('Executing sticker command:'), m.text);
     }
 }
 
