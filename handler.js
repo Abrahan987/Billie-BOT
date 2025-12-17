@@ -6,7 +6,6 @@ import fs, { unwatchFile, watchFile } from "fs"
 import chalk from "chalk"
 import fetch from "node-fetch"
 import ws from "ws"
-import { userCache, chatCache } from './lib/cache.js'
 
 const { proto } = (await import("@whiskeysockets/baileys")).default
 const isNumber = x => typeof x === "number" && !isNaN(x)
@@ -28,15 +27,8 @@ m = smsg(this, m) || m
 if (!m) return
 m.exp = 0
 try {
-let user = global.ultra ? userCache[m.sender] : global.db.data.users[m.sender]
-if (typeof user !== "object") {
-  user = {}
-  if (global.ultra) {
-    userCache[m.sender] = user
-  } else {
-    global.db.data.users[m.sender] = user
-  }
-}
+let user = global.db.data.users[m.sender]
+if (typeof user !== "object") global.db.data.users[m.sender] = {}
 if (user) {
 if (!("name" in user)) user.name = m.name
 if (!("exp" in user) || !isNumber(user.exp)) user.exp = 0
@@ -78,15 +70,8 @@ afk: -1,
 afkReason: "",
 warn: 0
 }
-let chat = global.ultra ? chatCache[m.chat] : global.db.data.chats[m.chat]
-if (typeof chat !== "object") {
-  chat = {}
-  if (global.ultra) {
-    chatCache[m.chat] = chat
-  } else {
-    global.db.data.chats[m.chat] = chat
-  }
-}
+let chat = global.db.data.chats[m.chat]
+if (typeof chat !== "object") global.db.data.chats[m.chat] = {}
 if (chat) {
 if (!("isBanned" in chat)) chat.isBanned = false
 if (!("isMute" in chat)) chat.isMute = false;
@@ -141,7 +126,7 @@ const isROwner = [...global.owner.map((number) => number)].map(v => v.replace(/[
 const isOwner = isROwner || m.fromMe
 const isPrems = isROwner || global.prems.map(v => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net").includes(m.sender) || user.premium == true
 const isOwners = [this.user.jid, ...global.owner.map((number) => number + "@s.whatsapp.net")].includes(m.sender)
-if (opts["queque"] && m.text && !(isPrems) && !global.ultra) {
+if (opts["queque"] && m.text && !(isPrems)) {
 const queque = this.msgqueque, time = 1000 * 5
 const previousID = queque[queque.length - 1]
 queque.push(m.id || m.key.id)
