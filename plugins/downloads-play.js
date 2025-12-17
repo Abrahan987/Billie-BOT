@@ -1,61 +1,112 @@
+import fetch from "node-fetch"
 import yts from 'yt-search'
-import ytdl from 'ytdl-core'
-import fs from 'fs'
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
-  try {
-    if (!text) throw `🎌 *Ingrese el nombre o enlace de un video de YouTube*\n\nEjemplo: ${usedPrefix + command} Good Day - The Offspring`
+try {
+if (!text.trim()) return conn.reply(m.chat, `❀ Por favor, ingresa el nombre de la música a descargar.`, m)
+await m.react('🕒')
 
-    await m.react('🕒')
+const videoMatch = text.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/)
+const query = videoMatch ? 'https://youtu.be/' + videoMatch[1] : text
+const search = await yts(query)
+const result = videoMatch ? search.videos.find(v => v.videoId === videoMatch[1]) || search.all[0] : search.all[0]
+if (!result) throw 'ꕥ No se encontraron resultados.'
 
-    const search = await yts(text)
-    const video = search.videos[0]
-    if (!video) throw '🚩 *No se encontraron resultados*'
+const { title, thumbnail, timestamp, views, ago, url, author, seconds } = result
+if (seconds > 1800) throw '⚠ El contenido supera el límite de duración (10 minutos).'
 
-    const { title, thumbnail, timestamp, views, ago, url } = video
+const vistas = formatViews(views)
+const info = `「✦」Descargando *<${title}>*\n\n> ❑ Canal » *${author.name}*\n> ♡ Vistas » *${vistas}*\n> ✧︎ Duración » *${timestamp}*\n> ☁︎ Publicado » *${ago}*\n> ➪ Link » ${url}`
 
-    const infoCaption = `
-*${title}*
-*Duración:* ${timestamp}
-*Vistas:* ${views.toLocaleString()}
-*Publicado:* ${ago}
-*URL:* ${url}
-    `
-    await conn.sendMessage(m.chat, { image: { url: thumbnail }, caption: infoCaption }, { quoted: m })
+// Send info and thumbnail first for instant feedback
+const thumb = (await conn.getFile(thumbnail)).data
+await conn.sendMessage(m.chat, { image: thumb, caption: info }, { quoted: m })
 
-    const isAudio = ['play', 'yta', 'ytmp3', 'playaudio'].includes(command)
+// Now, fetch the media and send it
+const isAudio = ['play', 'yta', 'ytmp3', 'playaudio'].includes(command)
+const isVideo = ['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)
 
-    const stream = ytdl(url, {
-      filter: isAudio ? 'audioonly' : 'videoandaudio',
-      quality: 'lowest',
-    })
+const media = await (isAudio ? getAud(url) : getVid(url))
 
-    if (isAudio) {
-      await conn.sendMessage(m.chat, {
-        audio: stream,
-        mimetype: 'audio/mpeg',
-        fileName: `${title}.mp3`
-      }, { quoted: m })
-    } else {
-      await conn.sendMessage(m.chat, {
-        video: stream,
-        mimetype: 'video/mp4',
-        fileName: `${title}.mp4`,
-        caption: `*${title}*`
-      }, { quoted: m })
-    }
-
-    await m.react('✔️')
-
-  } catch (error) {
-    await m.react('✖️')
-    m.reply(`🔴 *Ocurrió un error inesperado.*\n` + error.toString())
-  }
+if (!media?.url) {
+  await m.react('✖️')
+  return m.reply(`⚠ No se pudo obtener el enlace de descarga para ${isAudio ? 'audio' : 'video'}.`)
 }
 
-handler.help = ['play', 'yta', 'ytmp3', 'playaudio', 'play2', 'ytv', 'ytmp4', 'mp4']
+m.reply(`> ❀ *${isAudio ? 'Audio' : 'Vídeo'} procesado. Servidor:* \`${media.api}\``)
+
+if (isAudio) {
+  await conn.sendMessage(m.chat, { audio: { url: media.url }, fileName: `${title}.mp3`, mimetype: 'audio/mpeg' }, { quoted: m })
+} else if (isVideo) {
+  await conn.sendFile(m.chat, media.url, `${title}.mp4`, `> ❀ ${title}`, m)
+}
+
+await m.react('✔️')
+} catch (e) {
+  await m.react('✖️')
+  return conn.reply(m.chat, typeof e === 'string' ? e : '⚠︎ Se ha producido un problema.\n> Usa *' + usedPrefix + 'report* para informarlo.\n\n' + e.message, m)
+}}
+
+handler.command = handler.help = ['play', 'yta', 'ytmp3', 'play2', 'ytv', 'ytmp4', 'playaudio', 'mp4']
 handler.tags = ['descargas']
-handler.command = /^(play|yta|ytmp3|playaudio|play2|ytv|ytmp4|mp4)$/i
 handler.group = true
 
 export default handler
+
+async function getAud(url) {
+const apis = [
+{ api: 'Adonix', endpoint: `${global.APIs.adonix.url}/download/ytaudio?apikey=${global.APIs.adonix.key}&url=${encodeURIComponent(url)}`, extractor: res => res.data?.url },
+{ api: 'ZenzzXD', endpoint: `${global.APIs.zenzxz.url}/downloader/ytmp3?url=${encodeURIComponent(url)}`, extractor: res => res.data?.download_url },
+{ api: 'ZenzzXD v2', endpoint: `${global.APIs.zenzxz.url}/downloader/ytmp3v2?url=${encodeURIComponent(url)}`, extractor: res => res.data?.download_url },
+{ api: 'Yupra', endpoint: `${global.APIs.yupra.url}/api/downloader/ytmp3?url=${encodeURIComponent(url)}`, extractor: res => res.result?.link },
+{ api: 'Vreden', endpoint: `${global.APIs.vreden.url}/api/v1/download/youtube/audio?url=${encodeURIComponent(url)}&quality=128`, extractor: res => res.result?.download?.url },
+{ api: 'Vreden v2', endpoint: `${global.APIs.vreden.url}/api/v1/download/play/audio?query=${encodeURIComponent(url)}`, extractor: res => res.result?.download?.url },
+{ api: 'Xyro', endpoint: `${global.APIs.xyro.url}/download/youtubemp3?url=${encodeURIComponent(url)}`, extractor: res => res.result?.download }
+]
+return await fetchFromApis(apis)
+}
+async function getVid(url) {
+const apis = [
+{ api: 'Adonix', endpoint: `${global.APIs.adonix.url}/download/ytvideo?apikey=${global.APIs.adonix.key}&url=${encodeURIComponent(url)}`, extractor: res => res.data?.url },
+{ api: 'ZenzzXD', endpoint: `${global.APIs.zenzxz.url}/downloader/ytmp4?url=${encodeURIComponent(url)}&resolution=360p`, extractor: res => res.data?.download_url },
+{ api: 'ZenzzXD v2', endpoint: `${global.APIs.zenzxz.url}/downloader/ytmp4v2?url=${encodeURIComponent(url)}&resolution=360`, extractor: res => res.data?.download_url },
+{ api: 'Yupra', endpoint: `${global.APIs.yupra.url}/api/downloader/ytmp4?url=${encodeURIComponent(url)}`, extractor: res => res.result?.formats?.[0]?.url },
+{ api: 'Vreden', endpoint: `${global.APIs.vreden.url}/api/v1/download/youtube/video?url=${encodeURIComponent(url)}&quality=360`, extractor: res => res.result?.download?.url },
+{ api: 'Vreden v2', endpoint: `${global.APIs.vreden.url}/api/v1/download/play/video?query=${encodeURIComponent(url)}`, extractor: res => res.result?.download?.url },
+{ api: 'Xyro', endpoint: `${global.APIs.xyro.url}/download/youtubemp4?url=${encodeURIComponent(url)}&quality=360`, extractor: res => res.result?.download }
+]
+return await fetchFromApis(apis)
+}
+async function fetchFromApis(apis) {
+  const promises = apis.map(async ({ api, endpoint, extractor }) => {
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 5000) // 5 seconds timeout
+      const res = await fetch(endpoint, { signal: controller.signal })
+      clearTimeout(timeout)
+      if (!res.ok) throw new Error(`API request failed with status ${res.status}`)
+      const json = await res.json()
+      const link = extractor(json)
+      if (link) return { url: link, api }
+      else throw new Error('Invalid or empty link extracted')
+    } catch (e) {
+      // Do not log here, let Promise.any handle the aggregate error
+      throw new Error(`Failed to fetch from ${api}: ${e.message}`)
+    }
+  })
+
+  try {
+    return await Promise.any(promises)
+  } catch (e) {
+    // This will catch the AggregateError if all promises fail
+    console.error("All APIs failed:", e)
+    return null
+  }
+}
+function formatViews(views) {
+if (views === undefined) return "No disponible"
+if (views >= 1_000_000_000) return `${(views / 1_000_000_000).toFixed(1)}B (${views.toLocaleString()})`
+if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M (${views.toLocaleString()})`
+if (views >= 1_000) return `${(views / 1_000).toFixed(1)}k (${views.toLocaleString()})`
+return views.toString()
+}
