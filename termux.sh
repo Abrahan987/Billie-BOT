@@ -1,8 +1,8 @@
-# Código desarrollado por @gata_dios 
+# Código desarrollado por @gatadios y modificado por ABRAHAN-M
 
 #!/data/data/com.termux/files/usr/bin/bash 
-BOT_DIR="YukiBot-MD"  
-BOT_REPO="https://github.com/The-King-Destroy/$BOT_DIR"
+BOT_DIR="Sukuna-Bot"  
+BOT_REPO="https://github.com/Abrahan987/$BOT_DIR"
 DB_FILE="database.json"
 
 GREEN='\033[32m'
