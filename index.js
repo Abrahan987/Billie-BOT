@@ -269,40 +269,66 @@ yukiJadiBot({ pathYukiJadiBot: botPath, m: null, conn, args: '', usedPrefix: '/'
 const pluginFolder = global.__dirname(join(__dirname, './plugins/index'))
 const pluginFilter = (filename) => /\.js$/.test(filename)
 global.plugins = {}
+global.commandMap = new Map()
 async function filesInit() {
-for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
-try {
-const file = global.__filename(join(pluginFolder, filename))
-const module = await import(file)
-global.plugins[filename] = module.default || module
-} catch (e) {
-conn.logger.error(e)
-delete global.plugins[filename]
-}}}
+  global.commandMap.clear()
+  for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
+    try {
+      const file = global.__filename(join(pluginFolder, filename))
+      const module = await import(file)
+      const plugin = module.default || module
+      global.plugins[filename] = plugin
+      if (!plugin.command) continue
+      const commands = Array.isArray(plugin.command) ? plugin.command : [plugin.command]
+      for (const command of commands) {
+        if (typeof command === 'string') {
+          global.commandMap.set(command, { ...plugin, filename })
+        }
+      }
+    } catch (e) {
+      conn.logger.error(e)
+      delete global.plugins[filename]
+    }
+  }
+}
 filesInit().then((_) => Object.keys(global.plugins)).catch(console.error)
 global.reload = async (_ev, filename) => {
-if (pluginFilter(filename)) {
-const dir = global.__filename(join(pluginFolder, filename), true)
-if (filename in global.plugins) {
-if (existsSync(dir)) conn.logger.info(` updated plugin - '${filename}'`)
-else {
-conn.logger.warn(`deleted plugin - '${filename}'`)
-return delete global.plugins[filename]
-}} else conn.logger.info(`new plugin - '${filename}'`)
-const err = syntaxerror(readFileSync(dir), filename, {
-sourceType: 'module',
-allowAwaitOutsideFunction: true,
-})
-if (err) conn.logger.error(`syntax error while loading '${filename}'\n${format(err)}`)
-else {
-try {
-const module = (await import(`${global.__filename(dir)}?update=${Date.now()}`))
-global.plugins[filename] = module.default || module
-} catch (e) {
-conn.logger.error(`error require plugin '${filename}\n${format(e)}'`)
-} finally {
-global.plugins = Object.fromEntries(Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b)))
-}}}}
+  if (pluginFilter(filename)) {
+    const dir = global.__filename(join(pluginFolder, filename), true)
+    if (filename in global.plugins) {
+      const oldPlugin = global.plugins[filename]
+      if (oldPlugin && oldPlugin.command) {
+        const oldCommands = Array.isArray(oldPlugin.command) ? oldPlugin.command : [oldPlugin.command]
+        oldCommands.forEach(cmd => typeof cmd === 'string' && global.commandMap.delete(cmd))
+      }
+      if (existsSync(dir)) conn.logger.info(`updated plugin - '${filename}'`)
+      else {
+        conn.logger.warn(`deleted plugin - '${filename}'`)
+        return delete global.plugins[filename]
+      }
+    } else conn.logger.info(`new plugin - '${filename}'`)
+    const err = syntaxerror(readFileSync(dir), filename, {
+      sourceType: 'module',
+      allowAwaitOutsideFunction: true
+    })
+    if (err) conn.logger.error(`syntax error while loading '${filename}'\n${err}`)
+    else {
+      try {
+        const module = await import(`${global.__filename(dir)}?update=${Date.now()}`)
+        const newPlugin = module.default || module
+        global.plugins[filename] = newPlugin
+        if (newPlugin.command) {
+          const newCommands = Array.isArray(newPlugin.command) ? newPlugin.command : [newPlugin.command]
+          newCommands.forEach(cmd => typeof cmd === 'string' && global.commandMap.set(cmd, { ...newPlugin, filename }))
+        }
+      } catch (e) {
+        conn.logger.error(`error require plugin '${filename}'\n${e}`)
+      } finally {
+        global.plugins = Object.fromEntries(Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b)))
+      }
+    }
+  }
+}
 Object.freeze(global.reload)
 watch(pluginFolder, global.reload)
 await global.reloadHandler()
