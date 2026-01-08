@@ -147,6 +147,12 @@ const isRAdmin = userGroup?.admin == "superadmin" || false
 const isAdmin = isRAdmin || userGroup?.admin == "admin" || false
 const isBotAdmin = botGroup?.admin || false
 
+const chat = global.db.data.chats[m.chat] || {}
+if (m.isGroup && chat.muted && chat.muted.includes(m.sender) && !isAdmin) {
+    await this.sendMessage(m.chat, { delete: m.key })
+    return
+}
+
 if (m.mtype === 'stickerMessage' && global.db.data.sticker) {
     let hash = m.fileSha256.toString('base64');
     let sticker = global.db.data.sticker[hash];
